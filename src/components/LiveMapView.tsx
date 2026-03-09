@@ -1,139 +1,432 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Truck, Navigation, Wifi } from 'lucide-react';
+'use client'
 
-interface VehiclePin {
-  id: number;
-  regNo: string;
-  driver: string;
-  lat: number;
-  lng: number;
-  speed: number;
-  status: 'moving' | 'idle' | 'stopped';
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MapPin, Navigation, Truck, Clock, Fuel, Route, X, Eye, Map as MapIcon } from 'lucide-react'
+import { useFleetStore } from '@/lib/store'
+import { StatusBadge } from './StatusBadge'
+import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
+
+interface VehiclePosition {
+  id: number
+  regNo: string
+  driver: string
+  x: number
+  y: number
+  speed: number
+  heading: number
+  status: 'moving' | 'idle' | 'stopped'
 }
 
-const vehicles: VehiclePin[] = [
-  { id: 1, regNo: 'TN 09 AB 1234', driver: 'Rajan Kumar', lat: 13.0827, lng: 80.2707, speed: 62, status: 'moving' },
-  { id: 2, regNo: 'TN 09 CD 5678', driver: 'Suresh Babu', lat: 13.0569, lng: 80.2425, speed: 0, status: 'idle' },
-  { id: 3, regNo: 'TN 09 EF 9012', driver: 'Murugan S', lat: 13.1067, lng: 80.2206, speed: 45, status: 'moving' },
-  { id: 4, regNo: 'TN 09 GH 3456', driver: 'Vijay R', lat: 12.9716, lng: 80.2209, speed: 0, status: 'stopped' },
-  { id: 5, regNo: 'TN 09 IJ 7890', driver: 'Karthik M', lat: 13.0358, lng: 80.2636, speed: 78, status: 'moving' },
-];
+export function LiveMapView() {
+  const { vehicles } = useFleetStore()
+  const [vehiclePositions, setVehiclePositions] = useState<VehiclePosition[]>([])
+  const [selectedVehicle, setSelectedVehicle] = useState<VehiclePosition | null>(null)
+  const router = useRouter()
+  const [isDragging, setIsDragging] = useState(false)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const dragStart = useRef({ x: 0, y: 0 })
 
-const LiveMapView: React.FC = () => {
-  const [selected, setSelected] = useState<VehiclePin | null>(null);
-  const [positions, setPositions] = useState(vehicles);
-  const [pulse, setPulse] = useState(false);
+  // Generate initial positions for vehicles (Bangladesh context)
+  const initialPositions = useMemo(() => {
+    return vehicles.slice(0, 8).map((vehicle, index) => ({
+      id: vehicle.id,
+      regNo: vehicle.regNo,
+      driver: vehicle.driver,
+      // Distribute vehicles around major Bangladeshi cities
+      x: 20 + (index % 4) * 18 + Math.random() * 8,
+      y: 20 + Math.floor(index / 4) * 25 + Math.random() * 8,
+      speed: Math.floor(Math.random() * 60) + 20,
+      heading: Math.floor(Math.random() * 360),
+      status: ['moving', 'idle', 'stopped'][Math.floor(Math.random() * 3)] as 'moving' | 'idle' | 'stopped',
+    }))
+  }, [vehicles])
 
+  // Initialize positions when vehicles change
+  useEffect(() => {
+    setVehiclePositions(initialPositions)
+  }, [initialPositions])
+
+  // Simulate vehicle movement
   useEffect(() => {
     const interval = setInterval(() => {
-      setPulse(p => !p);
-      setPositions(prev => prev.map(v => ({
-        ...v,
-        lat: v.status === 'moving' ? v.lat + (Math.random() - 0.5) * 0.002 : v.lat,
-        lng: v.status === 'moving' ? v.lng + (Math.random() - 0.5) * 0.002 : v.lng,
-        speed: v.status === 'moving' ? Math.floor(40 + Math.random() * 50) : 0,
-      })));
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+      setVehiclePositions(prev => prev.map(vehicle => {
+        if (vehicle.status === 'stopped') return vehicle
 
-  const statusColor: Record<string, string> = {
-    moving: 'bg-green-500',
-    idle: 'bg-yellow-500',
-    stopped: 'bg-red-500',
-  };
+        const moveSpeed = vehicle.status === 'moving' ? 0.5 : 0.1
+        const rad = (vehicle.heading * Math.PI) / 180
+
+        return {
+          ...vehicle,
+          x: Math.max(5, Math.min(95, vehicle.x + Math.cos(rad) * moveSpeed)),
+          y: Math.max(5, Math.min(95, vehicle.y + Math.sin(rad) * moveSpeed)),
+          speed: vehicle.status === 'moving' ? vehicle.speed + (Math.random() - 0.5) * 5 : 0,
+          heading: (vehicle.heading + (Math.random() - 0.5) * 10 + 360) % 360,
+        }
+      }))
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Mouse drag handlers for panning
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 0) { // Left mouse button only
+      setIsDragging(true)
+      dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      const newPan = {
+        x: e.clientX - dragStart.current.x,
+        y: e.clientY - dragStart.current.y
+      }
+      // Limit panning range
+      setPan({
+        x: Math.max(-200, Math.min(200, newPan.x)),
+        y: Math.max(-200, Math.min(200, newPan.y))
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleMouseLeave = () => {
+    setIsDragging(false)
+  }
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.2, 2))
+  }
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.2, 0.6))
+  }
+
+  const handleResetView = () => {
+    setPan({ x: 0, y: 0 })
+    setZoom(1)
+  }
 
   return (
-    <div className="relative w-full h-full bg-slate-800 rounded-xl overflow-hidden">
-      {/* Map background */}
-      <div className="absolute inset-0" style={{
-        backgroundImage: `
-          linear-gradient(rgba(15,25,35,0.85), rgba(15,25,35,0.85)),
-          url('https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&q=80')
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}>
-        {/* Grid overlay */}
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'linear-gradient(#f97316 1px, transparent 1px), linear-gradient(90deg, #f97316 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }} />
-      </div>
+    <div
+      ref={mapRef}
+      className="relative h-full w-full overflow-hidden rounded-xl border border-border bg-[#1a2332]"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
+      {/* Map Container with transform */}
+      <div
+        className="absolute inset-0 transition-transform duration-75"
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center'
+        }}
+      >
+        {/* Map Grid Background */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="h-full w-full">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
 
-      {/* Live indicator */}
-      <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 z-10">
-        <div className={`w-2 h-2 rounded-full bg-green-400 ${pulse ? 'opacity-100' : 'opacity-40'} transition-opacity duration-500`}></div>
-        <Wifi size={14} className="text-green-400" />
-        <span className="text-white text-xs font-semibold">LIVE TRACKING</span>
-      </div>
+        {/* Simulated Map Features - Bangladesh Geography */}
+        <div className="absolute inset-0">
+          {/* Rivers - Buriganga, Padma, Meghna */}
+          <svg className="h-full w-full">
+            <path
+              d="M 0 300 Q 200 280, 400 320 T 800 300 T 1200 350"
+              stroke="#3b82f6"
+              strokeWidth="10"
+              fill="none"
+              opacity="0.4"
+            />
+            <path
+              d="M 50 0 Q 80 200, 60 400 T 120 600"
+              stroke="#3b82f6"
+              strokeWidth="8"
+              fill="none"
+              opacity="0.3"
+            />
+            <path
+              d="M 800 0 Q 780 150, 820 300 T 750 600"
+              stroke="#3b82f6"
+              strokeWidth="6"
+              fill="none"
+              opacity="0.3"
+            />
+          </svg>
 
-      {/* Vehicle pins */}
-      {positions.map((v, i) => {
-        const x = ((v.lng - 80.18) / 0.15) * 100;
-        const y = ((13.12 - v.lat) / 0.18) * 100;
-        return (
-          <button
-            key={v.id}
-            onClick={() => setSelected(selected?.id === v.id ? null : v)}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20 group"
-            style={{ left: `${Math.max(5, Math.min(95, x))}%`, top: `${Math.max(5, Math.min(95, y))}%` }}
-            aria-label={`Vehicle ${v.regNo}`}
-          >
-            <div className={`relative w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-transform duration-200 group-hover:scale-110 ${
-              selected?.id === v.id ? 'bg-[#f97316] scale-110' : 'bg-[#0f1923]'
-            }`}>
-              <Truck size={14} className="text-white" />
-              <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border border-white ${statusColor[v.status]}`}></div>
-            </div>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none">
-              {v.regNo}
-            </div>
-          </button>
-        );
-      })}
+          {/* Major Roads - Dhaka-Chittagong Highway, Dhaka-Sylhet, etc. */}
+          <svg className="h-full w-full">
+            <line x1="0" y1="200" x2="1200" y2="200" stroke="#4b5563" strokeWidth="5" opacity="0.5" />
+            <line x1="0" y1="400" x2="1200" y2="400" stroke="#4b5563" strokeWidth="4" opacity="0.4" />
+            <line x1="300" y1="0" x2="300" y2="600" stroke="#4b5563" strokeWidth="5" opacity="0.5" />
+            <line x1="600" y1="0" x2="600" y2="600" stroke="#4b5563" strokeWidth="4" opacity="0.4" />
+            <line x1="900" y1="0" x2="900" y2="600" stroke="#4b5563" strokeWidth="4" opacity="0.4" />
+          </svg>
 
-      {/* Selected vehicle info */}
-      {selected && (
-        <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-xl p-4 z-20 border border-white/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#f97316] flex items-center justify-center">
-                <Truck size={18} className="text-white" />
-              </div>
-              <div>
-                <p className="text-white font-bold">{selected.regNo}</p>
-                <p className="text-slate-400 text-xs">{selected.driver}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-1 justify-end">
-                <Navigation size={12} className="text-[#f97316]" />
-                <span className="text-white font-bold">{selected.speed} km/h</span>
-              </div>
-              <span className={`text-xs font-semibold ${selected.status === 'moving' ? 'text-green-400' : selected.status === 'idle' ? 'text-yellow-400' : 'text-red-400'}`}>
-                {selected.status.toUpperCase()}
-              </span>
+          {/* Bangladeshi Cities/Landmarks */}
+          <div className="absolute left-[280px] top-[170px] text-xs text-white font-semibold">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-4 w-4 text-green-400" />
+              Dhaka
             </div>
           </div>
-          <div className="flex items-center gap-1 mt-2 text-slate-400 text-xs">
-            <MapPin size={12} />
-            <span>Lat: {selected.lat.toFixed(4)}, Lng: {selected.lng.toFixed(4)}</span>
+          <div className="absolute left-[850px] top-[170px] text-xs text-gray-300">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-blue-400" />
+              Chittagong
+            </div>
+          </div>
+          <div className="absolute left-[600px] top-[80px] text-xs text-gray-300">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-purple-400" />
+              Sylhet
+            </div>
+          </div>
+          <div className="absolute left-[400px] top-[370px] text-xs text-gray-300">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-yellow-400" />
+              Rajshahi
+            </div>
+          </div>
+          <div className="absolute left-[100px] top-[320px] text-xs text-gray-300">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-red-400" />
+              Khulna
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Legend */}
-      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 z-10 space-y-1">
-        {[{ color: 'bg-green-500', label: 'Moving' }, { color: 'bg-yellow-500', label: 'Idle' }, { color: 'bg-red-500', label: 'Stopped' }].map(l => (
-          <div key={l.label} className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${l.color}`}></div>
-            <span className="text-white text-xs">{l.label}</span>
-          </div>
+        {/* Vehicle Markers */}
+        {vehiclePositions.map((vehicle) => (
+          <motion.div
+            key={vehicle.id}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.2, zIndex: 10 }}
+            style={{
+              left: `${vehicle.x}%`,
+              top: `${vehicle.y}%`,
+              transform: `translate(-50%, -50%) rotate(${vehicle.heading}deg)`,
+            }}
+            className={cn(
+              'absolute cursor-pointer transition-all duration-500',
+              selectedVehicle?.id === vehicle.id && 'z-20'
+            )}
+            onClick={() => setSelectedVehicle(vehicle)}
+          >
+            <motion.div
+              animate={{
+                rotate: vehicle.heading,
+              }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className={cn(
+                'relative flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-lg',
+                vehicle.status === 'moving' ? 'bg-green-500 border-green-400' :
+                vehicle.status === 'idle' ? 'bg-yellow-500 border-yellow-400' :
+                'bg-red-500 border-red-400'
+              )}>
+                <Truck className="h-5 w-5 text-white" />
+
+                {/* Pulse effect for moving vehicles */}
+                {vehicle.status === 'moving' && (
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 0, 0.5],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                    className="absolute inset-0 rounded-full bg-green-500"
+                  />
+                )}
+              </div>
+            </motion.div>
+
+            {/* Vehicle Label */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{
+                opacity: selectedVehicle?.id === vehicle.id ? 1 : 0.7,
+                y: selectedVehicle?.id === vehicle.id ? 10 : 10,
+              }}
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-xs text-white"
+              style={{ transform: `translateX(-50%) rotate(${-vehicle.heading}deg)` }}
+            >
+              {vehicle.regNo}
+            </motion.div>
+          </motion.div>
         ))}
       </div>
-    </div>
-  );
-};
 
-export default LiveMapView;
+      {/* Selected Vehicle Details Panel */}
+      <AnimatePresence>
+        {selectedVehicle && (
+          <motion.div
+            initial={{ x: 400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 400, opacity: 0 }}
+            className="absolute right-4 top-4 w-72 rounded-xl border border-border bg-background/95 backdrop-blur-xl p-4 shadow-xl"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold">{selectedVehicle.regNo}</h3>
+                <p className="text-sm text-muted-foreground">{selectedVehicle.driver}</p>
+              </div>
+              <button
+                onClick={() => setSelectedVehicle(null)}
+                className="rounded-full p-1 hover:bg-accent transition-colors"
+                type="button"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Navigation className="h-4 w-4" />
+                  Status
+                </div>
+                <StatusBadge
+                  status={
+                    selectedVehicle.status === 'moving' ? 'active' :
+                    selectedVehicle.status === 'idle' ? 'warning' : 'inactive'
+                  }
+                  size="sm"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  Speed
+                </div>
+                <span className="font-semibold">
+                  {Math.round(selectedVehicle.speed)} km/h
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Route className="h-4 w-4" />
+                  Heading
+                </div>
+                <span className="font-semibold">
+                  {Math.round(selectedVehicle.heading)}°
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Fuel className="h-4 w-4" />
+                  Fuel Level
+                </div>
+                <span className="font-semibold">
+                  {vehicles.find(v => v.id === selectedVehicle.id)?.fuelLevel || 0}%
+                </span>
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mt-4 flex gap-2"
+            >
+              <button
+                onClick={() => router.push(`/vehicles`)}
+                className="flex-1 rounded-lg bg-orange-500 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
+              >
+                <span className="flex items-center justify-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  View Details
+                </span>
+              </button>
+              <button
+                onClick={() => router.push(`/gps`)}
+                className="flex-1 rounded-lg border border-border py-2 text-sm font-medium hover:bg-accent transition-colors"
+              >
+                <span className="flex items-center justify-center gap-1">
+                  <Navigation className="h-3 w-3" />
+                  Track
+                </span>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Map Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+        <button
+          onClick={handleZoomIn}
+          className="flex h-10 w-10 items-center justify-center rounded-lg bg-background border border-border shadow-lg hover:bg-accent transition-colors"
+        >
+          <span className="font-semibold text-lg">+</span>
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="flex h-10 w-10 items-center justify-center rounded-lg bg-background border border-border shadow-lg hover:bg-accent transition-colors"
+        >
+          <span className="font-semibold text-lg">−</span>
+        </button>
+        <button
+          onClick={handleResetView}
+          className="flex h-10 w-10 items-center justify-center rounded-lg bg-background border border-border shadow-lg hover:bg-accent transition-colors"
+          title="Reset View"
+        >
+          <Navigation className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Zoom Level Indicator */}
+      <div className="absolute bottom-4 right-16 rounded-lg bg-background/95 backdrop-blur-xl border border-border px-2 py-1 shadow-lg">
+        <span className="text-xs font-medium text-muted-foreground">
+          {Math.round(zoom * 100)}%
+        </span>
+      </div>
+
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 rounded-lg bg-background/95 backdrop-blur-xl border border-border p-3 shadow-lg">
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">STATUS</p>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+            <span className="text-xs">Moving</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+            <span className="text-xs">Idle</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span className="text-xs">Stopped</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

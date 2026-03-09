@@ -1,261 +1,430 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Upload, Scan, CheckCircle, Loader, ZoomIn } from 'lucide-react';
-import { toast } from 'react-toastify';
+'use client'
 
-interface AIScanResult {
-  vehicleNo?: string;
-  kmReading?: string;
-  date?: string;
-  fuelAmount?: string;
-  fuelCost?: string;
-  vendor?: string;
-  gst?: string;
-  workDesc?: string;
-  totalCost?: string;
-}
+import { useState, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { useFleetStore } from '@/lib/store'
+import { toast } from '@/hooks/use-toast'
+import { 
+  Scan, Camera, Upload, FileText, CheckCircle, 
+  AlertCircle, Loader2, Sparkles, X, Download, RefreshCw 
+} from 'lucide-react'
 
 interface AIScanModalProps {
-  open: boolean;
-  onClose: () => void;
-  mode: 'fuel' | 'maintenance' | 'km' | 'trip';
-  onResult?: (result: AIScanResult) => void;
+  children: React.ReactNode
+  documentType?: 'vehicle' | 'driver' | 'fuel' | 'maintenance'
+  onScanComplete?: (data: any) => void
 }
 
-const dummyResults: Record<string, AIScanResult> = {
-  fuel: { vehicleNo: 'TN 09 AB 1234', kmReading: '48,320', date: '2026-01-15', fuelAmount: '85 L', fuelCost: '₹8,415', vendor: 'HP Petrol Pump, Chennai' },
-  maintenance: { vendor: 'Sri Murugan Auto Works', workDesc: 'Engine oil change, Filter replacement, Brake pad service', totalCost: '₹12,500', gst: '₹2,250', date: '2026-01-14' },
-  km: { kmReading: '48,320', date: '2026-01-15', vehicleNo: 'TN 09 AB 1234' },
-  trip: { date: '2026-01-15', kmReading: '1,240 km', fuelCost: '₹9,800', totalCost: '₹24,500' },
-};
+interface ExtractedData {
+  documentNumber?: string
+  name?: string
+  expiryDate?: string
+  issueDate?: string
+  vehicleReg?: string
+  amount?: number
+  vendor?: string
+  rawText?: string
+}
 
-const AIScanModal: React.FC<AIScanModalProps> = ({ open, onClose, mode, onResult }) => {
-  const [step, setStep] = useState<'capture' | 'scanning' | 'result'>('capture');
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [result, setResult] = useState<AIScanResult | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setCameraActive(true);
-    } catch {
-      toast.error('Camera access denied. Please allow camera permission.');
-    }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  }, []);
-
-  const capturePhoto = useCallback(() => {
-    if (videoRef.current && canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      canvasRef.current.width = videoRef.current.videoWidth;
-      canvasRef.current.height = videoRef.current.videoHeight;
-      ctx?.drawImage(videoRef.current, 0, 0);
-      const dataUrl = canvasRef.current.toDataURL('image/jpeg');
-      setCapturedImage(dataUrl);
-      stopCamera();
-      runScan(dataUrl);
-    }
-  }, [stopCamera]);
+export function AIScanModal({ children, documentType = 'vehicle', onScanComplete }: AIScanModalProps) {
+  const [open, setOpen] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanComplete, setScanComplete] = useState(false)
+  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [filePreview, setFilePreview] = useState<string>('')
+  const [isCameraActive, setIsCameraActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setCapturedImage(dataUrl);
-      runScan(dataUrl);
-    };
-    reader.readAsDataURL(file);
-  };
+    const file = e.target.files?.[0]
+    if (file) {
+      setUploadedFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      startScan()
+    }
+  }
 
-  const runScan = (_dataUrl: string) => {
-    setStep('scanning');
-    setTimeout(() => {
-      const res = dummyResults[mode];
-      setResult(res);
-      setStep('result');
-    }, 2500);
-  };
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        setIsCameraActive(true)
+      }
+    } catch (error) {
+      toast({
+        title: 'Camera Error',
+        description: 'Unable to access camera. Please upload a file instead.',
+        variant: 'destructive'
+      })
+    }
+  }
 
-  const handleConfirm = () => {
-    if (result && onResult) onResult(result);
-    toast.success('AI scan data applied successfully!');
-    handleClose();
-  };
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    setIsCameraActive(false)
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current
+      const video = videoRef.current
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(video, 0, 0)
+        const imageDataUrl = canvas.toDataURL('image/png')
+        setFilePreview(imageDataUrl)
+        stopCamera()
+        startScan()
+      }
+    }
+  }
+
+  const startScan = async () => {
+    setIsScanning(true)
+    setScanComplete(false)
+    setExtractedData(null)
+
+    // Simulate AI scanning process
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // Simulate extracted data based on document type
+    const mockData: ExtractedData = {
+      rawText: 'Document scanned successfully. All information has been extracted using AI OCR technology.'
+    }
+
+    switch (documentType) {
+      case 'vehicle':
+        mockData.vehicleReg = 'TN 09 AB 1234'
+        mockData.documentNumber = 'MAT445103K2B12345'
+        mockData.expiryDate = '2028-06-15'
+        mockData.issueDate = '2022-03-15'
+        break
+      case 'driver':
+        mockData.name = 'Rajan Kumar'
+        mockData.documentNumber = 'TN0120240012345'
+        mockData.expiryDate = '2026-01-25'
+        mockData.issueDate = '2021-01-25'
+        break
+      case 'fuel':
+        mockData.vehicleReg = 'TN 09 AB 1234'
+        mockData.amount = 8415
+        mockData.vendor = 'HP Petrol Pump, Chennai'
+        break
+      case 'maintenance':
+        mockData.vehicleReg = 'TN 09 AB 1234'
+        mockData.amount = 8500
+        mockData.vendor = 'Sri Murugan Auto Works'
+        break
+    }
+
+    setExtractedData(mockData)
+    setScanComplete(true)
+    setIsScanning(false)
+
+    toast({
+      title: 'Scan Complete',
+      description: 'Document has been scanned and data extracted successfully',
+    })
+
+    onScanComplete?.(mockData)
+  }
 
   const handleClose = () => {
-    stopCamera();
-    setStep('capture');
-    setCapturedImage(null);
-    setResult(null);
-    onClose();
-  };
+    stopCamera()
+    setUploadedFile(null)
+    setFilePreview('')
+    setScanComplete(false)
+    setExtractedData(null)
+    setOpen(false)
+  }
 
-  const modeLabels: Record<string, string> = {
-    fuel: 'Fuel Bill Scanner',
-    maintenance: 'Maintenance Bill Scanner',
-    km: 'KM Reading Scanner',
-    trip: 'Trip Sheet Scanner',
-  };
+  const handleReset = () => {
+    setUploadedFile(null)
+    setFilePreview('')
+    setScanComplete(false)
+    setExtractedData(null)
+  }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={(e) => e.target === e.currentTarget && handleClose()}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#0f1923] to-[#1a2535]">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#f97316] flex items-center justify-center">
-                  <Scan size={16} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-white font-bold text-sm">AI Document Scanner</h2>
-                  <p className="text-slate-400 text-xs">{modeLabels[mode]}</p>
-                </div>
-              </div>
-              <button onClick={handleClose} className="text-slate-400 hover:text-white transition-colors">
-                <X size={20} />
-              </button>
-            </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Scan className="h-5 w-5" />
+            AI Document Scanner
+          </DialogTitle>
+        </DialogHeader>
 
-            <div className="p-6">
-              {step === 'capture' && (
-                <div className="space-y-4">
-                  {cameraActive ? (
-                    <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
-                      <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                      <div className="absolute inset-0 border-2 border-[#f97316]/60 rounded-xl pointer-events-none">
-                        <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-[#f97316]"></div>
-                        <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-[#f97316]"></div>
-                        <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-[#f97316]"></div>
-                        <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-[#f97316]"></div>
-                      </div>
+        <div className="space-y-6">
+          {/* Upload/Camera Section */}
+          {!scanComplete && !isScanning && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              {!isCameraActive && (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                  <div className="space-y-4">
+                    <div className="flex justify-center gap-4">
                       <button
-                        onClick={capturePhoto}
-                        className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 bg-[#f97316] rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-accent transition-colors"
                       >
-                        <Camera size={24} className="text-white" />
+                        <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                          <Upload className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <span className="text-sm font-medium">Upload File</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-accent transition-colors"
+                      >
+                        <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
+                          <Camera className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <span className="text-sm font-medium">Use Camera</span>
                       </button>
                     </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50">
-                      <ZoomIn size={40} className="mx-auto text-slate-400 mb-3" />
-                      <p className="text-slate-600 font-medium mb-1">Position document in frame</p>
-                      <p className="text-slate-400 text-sm">Use camera or upload an image file</p>
-                    </div>
-                  )}
 
-                  <canvas ref={canvasRef} className="hidden" />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept="image/*,.pdf"
+                      onChange={handleFileUpload}
+                    />
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={cameraActive ? () => { stopCamera(); } : startCamera}
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-[#0f1923] text-white rounded-lg hover:bg-[#1a2535] transition-all duration-200 font-medium text-sm"
-                    >
-                      <Camera size={16} />
-                      {cameraActive ? 'Stop Camera' : 'Open Camera'}
-                    </button>
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-[#f97316] text-white rounded-lg hover:bg-[#ea6c0a] transition-all duration-200 font-medium text-sm"
-                    >
-                      <Upload size={16} />
-                      Upload File
-                    </button>
+                    <p className="text-sm text-muted-foreground">
+                      Supported formats: JPG, PNG, PDF
+                    </p>
                   </div>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                 </div>
               )}
 
-              {step === 'scanning' && (
-                <div className="text-center py-8">
-                  {capturedImage && (
-                    <img src={capturedImage} alt="Captured document" className="w-full h-40 object-cover rounded-xl mb-6 opacity-60" />
-                  )}
-                  <div className="flex items-center justify-center mb-4">
-                    <Loader size={40} className="text-[#f97316] animate-spin" />
+              {isCameraActive && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-4"
+                >
+                  <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 border-4 border-primary/30 m-4 rounded-lg pointer-events-none" />
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                      <div className="w-32 h-32 border-2 border-white/50 rounded-lg" />
+                    </div>
                   </div>
-                  <p className="text-slate-800 font-semibold mb-1">AI Processing...</p>
-                  <p className="text-slate-500 text-sm">Extracting data from document</p>
-                  <div className="mt-4 bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <motion.div
-                      initial={{ width: '0%' }}
-                      animate={{ width: '100%' }}
-                      transition={{ duration: 2.5 }}
-                      className="h-full bg-[#f97316] rounded-full"
+
+                  <div className="flex justify-center gap-3">
+                    <Button type="button" variant="outline" onClick={stopCamera}>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button type="button" onClick={capturePhoto}>
+                      <Camera className="h-4 w-4 mr-2" />
+                      Capture
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Scanning Animation */}
+          {isScanning && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+            >
+              <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+                {filePreview && (
+                  <img src={filePreview} alt="Scanning" className="w-full h-full object-cover" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/20 to-transparent animate-pulse" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent animate-scan" />
+                <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-4">
+                  <div className="flex items-center gap-3 text-white">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <div>
+                      <p className="font-medium">Scanning Document...</p>
+                      <p className="text-sm text-white/70">AI is extracting information</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="h-4 w-4 text-blue-500 animate-pulse" />
+                <span>Analyzing document structure and text...</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Results */}
+          {scanComplete && extractedData && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Document scanned successfully!
+                </p>
+              </div>
+
+              {filePreview && (
+                <div className="border rounded-lg overflow-hidden">
+                  <img src={filePreview} alt="Scanned document" className="w-full max-h-48 object-contain bg-muted" />
+                </div>
+              )}
+
+              <div className="border rounded-lg p-4 space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-blue-500" />
+                  Extracted Data
+                </h3>
+
+                <div className="grid gap-3">
+                  {extractedData.vehicleReg && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Vehicle Registration</Label>
+                      <div className="col-span-2">
+                        <Input value={extractedData.vehicleReg} readOnly className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+
+                  {extractedData.name && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Name</Label>
+                      <div className="col-span-2">
+                        <Input value={extractedData.name} readOnly className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+
+                  {extractedData.documentNumber && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Document Number</Label>
+                      <div className="col-span-2">
+                        <Input value={extractedData.documentNumber} readOnly className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+
+                  {extractedData.issueDate && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Issue Date</Label>
+                      <div className="col-span-2">
+                        <Input type="date" value={extractedData.issueDate} readOnly className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+
+                  {extractedData.expiryDate && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Expiry Date</Label>
+                      <div className="col-span-2">
+                        <Input type="date" value={extractedData.expiryDate} readOnly className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+
+                  {extractedData.amount && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Amount</Label>
+                      <div className="col-span-2">
+                        <Input 
+                          value={`৳${extractedData.amount.toLocaleString()}`} 
+                          readOnly 
+                          className="bg-muted" 
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {extractedData.vendor && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Label className="text-sm text-muted-foreground">Vendor</Label>
+                      <div className="col-span-2">
+                        <Input value={extractedData.vendor} readOnly className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-2">
+                    <Label className="text-sm text-muted-foreground">Raw Extracted Text</Label>
+                    <Textarea
+                      value={extractedData.rawText}
+                      readOnly
+                      rows={3}
+                      className="bg-muted resize-none"
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {step === 'result' && result && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
-                    <CheckCircle size={20} />
-                    <span className="font-semibold">AI Extraction Complete</span>
-                  </div>
-                  {capturedImage && (
-                    <img src={capturedImage} alt="Scanned document" className="w-full h-32 object-cover rounded-xl" />
-                  )}
-                  <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-                    {Object.entries(result).map(([key, val]) => (
-                      <div key={key} className="flex justify-between items-center py-1 border-b border-slate-200 last:border-0">
-                        <span className="text-slate-500 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                        <span className="text-slate-800 font-semibold text-sm">{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => { setStep('capture'); setCapturedImage(null); setResult(null); }}
-                      className="px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all duration-200 font-medium text-sm"
-                    >
-                      Rescan
-                    </button>
-                    <button
-                      onClick={handleConfirm}
-                      className="px-4 py-3 bg-[#f97316] text-white rounded-lg hover:bg-[#ea6c0a] transition-all duration-200 font-medium text-sm"
-                    >
-                      Apply Data
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={handleReset} className="flex-1">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Scan Another
+                </Button>
+                <Button type="button" onClick={() => {
+                  toast({
+                    title: 'Data Saved',
+                    description: 'Extracted data has been saved successfully',
+                  })
+                  handleClose()
+                }} className="flex-1">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Save Data
+                </Button>
+              </div>
+            </motion.div>
+          )}
 
-export default AIScanModal;
+          {/* Hidden canvas for capture */}
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

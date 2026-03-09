@@ -1,78 +1,104 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard, Truck, Users, Fuel, Wrench, Circle, CreditCard,
-  MapPin, Route, Package, BarChart3, Bell, FileSpreadsheet,
-  Settings, ChevronLeft, ChevronRight, Zap
-} from 'lucide-react';
+'use client'
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/vehicles', icon: Truck, label: 'Vehicles' },
-  { to: '/drivers', icon: Users, label: 'Drivers' },
-  { to: '/gps', icon: MapPin, label: 'GPS Tracking' },
-  { to: '/fuel', icon: Fuel, label: 'Fuel Management' },
-  { to: '/fastag', icon: CreditCard, label: 'FASTag' },
-  { to: '/maintenance', icon: Wrench, label: 'Maintenance' },
-  { to: '/tyres', icon: Circle, label: 'Tyre Management' },
-  { to: '/trips', icon: Route, label: 'Trip Management' },
-  { to: '/inventory', icon: Package, label: 'Inventory' },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
-  { to: '/alerts', icon: Bell, label: 'Alerts' },
-  { to: '/sap-export', icon: FileSpreadsheet, label: 'SAP Export' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { 
+  LayoutDashboard, 
+  Truck, 
+  User, 
+  MapPin, 
+  Fuel, 
+  CreditCard, 
+  Wrench, 
+  Circle, 
+  Route, 
+  Package, 
+  FileText, 
+  AlertTriangle, 
+  FileDown, 
+  Settings 
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-const Sidebar: React.FC<{ collapsed: boolean; onToggle: () => void }> = ({ collapsed, onToggle }) => {
+const navigation = [
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Vehicles', href: '/vehicles', icon: Truck },
+  { name: 'Drivers', href: '/drivers', icon: User },
+  { name: 'GPS', href: '/gps', icon: MapPin },
+  { name: 'Fuel', href: '/fuel', icon: Fuel },
+  { name: 'FASTag', href: '/fastag', icon: CreditCard },
+  { name: 'Maintenance', href: '/maintenance', icon: Wrench },
+  { name: 'Tyres', href: '/tyres', icon: Circle },
+  { name: 'Trips', href: '/trips', icon: Route },
+  { name: 'Inventory', href: '/inventory', icon: Package },
+  { name: 'Reports', href: '/reports', icon: FileText },
+  { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
+  { name: 'SAP Export', href: '/sap-export', icon: FileDown },
+  { name: 'Settings', href: '/settings', icon: Settings },
+]
+
+export function Sidebar() {
+  const pathname = usePathname()
+
   return (
-    <aside
-      className={`fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-64'
-      }`}
-      style={{ background: 'linear-gradient(180deg, #0f1923 0%, #1a2535 60%, #0f1923 100%)' }}
+    <motion.aside
+      initial={{ x: -300 }}
+      animate={{ x: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="fixed left-0 top-0 z-50 h-screen w-64 bg-[#0f1923] border-r border-white/10 flex flex-col"
     >
-      <div className={`flex items-center gap-3 px-4 py-5 border-b border-white/10 ${collapsed ? 'justify-center' : ''}`}>
-        <div className="w-8 h-8 rounded-lg bg-[#f97316] flex items-center justify-center flex-shrink-0">
-          <Zap size={16} className="text-white" />
+      {/* Logo */}
+      <div className="flex h-16 items-center justify-center border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <Truck className="h-8 w-8 text-orange-500" />
+          <span className="text-xl font-bold text-white">FleetPro</span>
         </div>
-        {!collapsed && (
-          <div>
-            <div className="text-white font-bold text-sm leading-tight" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>SKM</div>
-            <div className="text-[#f97316] text-xs font-semibold tracking-widest">TRANSPORT</div>
-          </div>
-        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4 scrollbar-hide">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg mb-0.5 transition-all duration-200 group relative ${
-                isActive
-                  ? 'bg-[#f97316] text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-white/10'
-              } ${collapsed ? 'justify-center px-2' : ''}`
-            }
-            title={collapsed ? label : undefined}
-          >
-            <Icon size={18} className="flex-shrink-0" />
-            {!collapsed && <span className="text-sm font-medium">{label}</span>}
-          </NavLink>
-        ))}
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        <ul className="space-y-1 px-3">
+          {navigation.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+
+            return (
+              <li key={item.name}>
+                <Link href={item.href}>
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                      isActive
+                        ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                    )}
+                  >
+                    <Icon className={cn('h-5 w-5', isActive ? 'text-orange-500' : '')} />
+                    <span>{item.name}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        className="ml-auto h-2 w-2 rounded-full bg-orange-500"
+                      />
+                    )}
+                  </motion.div>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       </nav>
 
-      <button
-        onClick={onToggle}
-        className="flex items-center justify-center w-full py-3 border-t border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-200"
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-      </button>
-    </aside>
-  );
-};
-
-export default Sidebar;
+      {/* Footer Info */}
+      <div className="border-t border-white/10 p-4">
+        <div className="rounded-lg bg-white/5 p-3">
+          <p className="text-xs text-gray-400">Fleet Management System</p>
+          <p className="text-xs text-gray-500 mt-1">v1.0.0</p>
+        </div>
+      </div>
+    </motion.aside>
+  )
+}

@@ -1,0 +1,1225 @@
+import { create } from 'zustand';
+
+// Types
+export type Status = 'active' | 'inactive' | 'expired' | 'due' | 'ok' | 'warning' | 'critical' | 'pending' | 'approved';
+
+export interface Vehicle {
+  id: number;
+  regNo: string;
+  model: string;
+  chassis: string;
+  engine: string;
+  driver: string;
+  driverId?: number;
+  gpsId: string;
+  fuelCard: string;
+  fastagId: string;
+  status: 'active' | 'inactive';
+  kmReading: number;
+  fuelLevel: number;
+  photo: string;
+  documents: { name: string; expiry: string; status: 'ok' | 'expired' | 'due' }[];
+  lastService: string;
+  nextService: string;
+  location: string;
+  purchaseDate: string;
+}
+
+export interface Driver {
+  id: number;
+  name: string;
+  empId: string;
+  phone: string;
+  license: string;
+  licenseExpiry: string;
+  insurance: string;
+  insuranceExpiry: string;
+  status: 'active' | 'inactive';
+  vehicle: string;
+  vehicleId?: number;
+  joinDate: string;
+  address: string;
+  photo: string;
+  trips: number;
+  kmDriven: number;
+  fuelEfficiency: string;
+  rating: number;
+  violations: number;
+  lastTrip: string;
+  experience: string;
+}
+
+export interface FuelEntry {
+  id: number;
+  vehicle: string;
+  vehicleId?: number;
+  driver: string;
+  driverId?: number;
+  date: string;
+  km: number;
+  fuel: number;
+  cost: number;
+  kmpl: number;
+  vendor: string;
+}
+
+export interface Trip {
+  id: number;
+  vehicle: string;
+  vehicleId?: number;
+  driver: string;
+  driverId?: number;
+  from: string;
+  to: string;
+  date: string;
+  distance: number;
+  freight: number;
+  fuelCost: number;
+  tollCost: number;
+  otherCost: number;
+  status: 'active' | 'inactive';
+}
+
+export interface MaintenanceRecord {
+  id: number;
+  vehicle: string;
+  vehicleId?: number;
+  date: string;
+  work: string;
+  vendor: string;
+  cost: number;
+  gst: number;
+  status: 'pending' | 'approved';
+  nextKm: number;
+}
+
+export interface FASTag {
+  id: number;
+  fastagId: string;
+  vehicle: string;
+  vehicleId?: number;
+  driver: string;
+  driverId?: number;
+  balance: number;
+  threshold: number;
+  status: 'ok' | 'warning' | 'critical';
+  lastToll: string;
+  monthlyToll: number;
+  bank: string;
+}
+
+export interface Tyre {
+  id: number;
+  vehicle: string;
+  vehicleId?: number;
+  tyreNo: string;
+  position: string;
+  size: string;
+  brand: string;
+  changeDate: string;
+  changeKm: number;
+  currentKm: number;
+  cost: number;
+  mileage: number;
+  cpkm: number;
+}
+
+export interface Alert {
+  id: number;
+  type: 'critical' | 'warning' | 'info';
+  msg: string;
+  time: string;
+  read: boolean;
+}
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  minStock: number;
+  location: string;
+  lastUpdated: string;
+  status: 'ok' | 'low' | 'critical';
+}
+
+// Initial Data - 30 Vehicles
+const initialVehicles: Vehicle[] = [
+  {
+    id: 1, regNo: 'TN 09 AB 1234', model: 'Tata Prima 4028.S', chassis: 'MAT445103K2B12345', engine: '4928CRDL12345',
+    driver: 'Rajan Kumar', driverId: 1, gpsId: 'GPS-001', fuelCard: 'FC-2024-001', fastagId: 'FT-TN-001',
+    status: 'active', kmReading: 48320, fuelLevel: 72, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-06-15', status: 'ok' },
+      { name: 'FC', expiry: '2026-03-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2026-11-20', status: 'ok' },
+      { name: 'Permit', expiry: '2026-08-10', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-05-30', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-04-15', status: 'ok' },
+    ],
+    lastService: '2025-12-10', nextService: '50,500 KM', location: 'Chennai, TN', purchaseDate: '2022-03-15',
+  },
+  {
+    id: 2, regNo: 'TN 09 CD 5678', model: 'Ashok Leyland 3518', chassis: 'ALY3518K2B67890', engine: 'H6E4CRDL67890',
+    driver: 'Suresh Babu', driverId: 2, gpsId: 'GPS-002', fuelCard: 'FC-2024-002', fastagId: 'FT-TN-002',
+    status: 'active', kmReading: 62150, fuelLevel: 45, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2027-09-20', status: 'ok' },
+      { name: 'FC', expiry: '2026-06-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-06-30', status: 'ok' },
+      { name: 'Permit', expiry: '2026-11-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-07-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-08-28', status: 'ok' },
+    ],
+    lastService: '2025-11-05', nextService: '65,000 KM', location: 'Coimbatore, TN', purchaseDate: '2021-08-20',
+  },
+  {
+    id: 3, regNo: 'TN 09 EF 9012', model: 'Eicher Pro 6031', chassis: 'ECH6031K2B11111', engine: 'E6E5CRDL11111',
+    driver: 'Murugan S', driverId: 3, gpsId: 'GPS-003', fuelCard: 'FC-2024-003', fastagId: 'FT-TN-003',
+    status: 'active', kmReading: 31200, fuelLevel: 88, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-01-10', status: 'ok' },
+      { name: 'FC', expiry: '2026-07-25', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-09-15', status: 'ok' },
+      { name: 'Permit', expiry: '2027-02-28', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-12-10', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-06-20', status: 'ok' },
+    ],
+    lastService: '2026-01-02', nextService: '35,000 KM', location: 'Madurai, TN', purchaseDate: '2023-01-10',
+  },
+  {
+    id: 4, regNo: 'TN 09 GH 3456', model: 'Tata LPT 3118', chassis: 'MAT3118K2B22222', engine: '4978CRDL22222',
+    driver: 'Vijay R', driverId: 4, gpsId: 'GPS-004', fuelCard: 'FC-2024-004', fastagId: 'FT-TN-004',
+    status: 'inactive', kmReading: 78900, fuelLevel: 20, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2026-04-30', status: 'ok' },
+      { name: 'FC', expiry: '2026-04-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2026-08-10', status: 'ok' },
+      { name: 'Permit', expiry: '2026-05-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-04-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-05-31', status: 'ok' },
+    ],
+    lastService: '2025-09-15', nextService: '80,000 KM', location: 'Trichy, TN', purchaseDate: '2020-06-05',
+  },
+  {
+    id: 5, regNo: 'TN 09 IJ 7890', model: 'BharatBenz 3523R', chassis: 'BBZ3523K2B33333', engine: 'OM457LA33333',
+    driver: 'Karthik M', driverId: 5, gpsId: 'GPS-005', fuelCard: 'FC-2024-005', fastagId: 'FT-TN-005',
+    status: 'active', kmReading: 22400, fuelLevel: 60, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2030-02-20', status: 'ok' },
+      { name: 'FC', expiry: '2027-08-10', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-11-30', status: 'ok' },
+      { name: 'Permit', expiry: '2027-06-15', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-01-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-08-25', status: 'ok' },
+    ],
+    lastService: '2025-12-28', nextService: '25,000 KM', location: 'Salem, TN', purchaseDate: '2024-02-14',
+  },
+  {
+    id: 6, regNo: 'TN 09 KL 2345', model: 'Mahindra Blazo X 35', chassis: 'MHD35XK2B44444', engine: 'mPower 7.2L44444',
+    driver: 'Selvam P', driverId: 6, gpsId: 'GPS-006', fuelCard: 'FC-2024-006', fastagId: 'FT-TN-006',
+    status: 'active', kmReading: 41800, fuelLevel: 55, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-08-15', status: 'ok' },
+      { name: 'FC', expiry: '2026-10-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-02-28', status: 'ok' },
+      { name: 'Permit', expiry: '2026-12-30', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-09-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-07-10', status: 'ok' },
+    ],
+    lastService: '2025-12-20', nextService: '45,000 KM', location: 'Erode, TN', purchaseDate: '2023-05-10',
+  },
+  {
+    id: 7, regNo: 'KA 01 MN 5678', model: 'Volvo FM 500', chassis: 'YV2FM500K2A56789', engine: 'D13C50056789',
+    driver: 'Ramesh G', driverId: 7, gpsId: 'GPS-007', fuelCard: 'FC-2024-007', fastagId: 'FT-KA-001',
+    status: 'active', kmReading: 89450, fuelLevel: 65, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-05-20', status: 'ok' },
+      { name: 'FC', expiry: '2026-11-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-08-25', status: 'ok' },
+      { name: 'Permit', expiry: '2027-03-30', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-06-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-09-05', status: 'ok' },
+    ],
+    lastService: '2026-01-05', nextService: '92,000 KM', location: 'Bangalore, KA', purchaseDate: '2020-11-20',
+  },
+  {
+    id: 8, regNo: 'KA 02 OP 9012', model: 'Scania P410', chassis: 'YSR410K2A90123', engine: 'DC13 12390123',
+    driver: 'Shankar N', driverId: 8, gpsId: 'GPS-008', fuelCard: 'FC-2024-008', fastagId: 'FT-KA-002',
+    status: 'active', kmReading: 56780, fuelLevel: 78, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-12-10', status: 'ok' },
+      { name: 'FC', expiry: '2026-09-25', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-05-15', status: 'ok' },
+      { name: 'Permit', expiry: '2027-01-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-11-25', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-06-30', status: 'ok' },
+    ],
+    lastService: '2025-12-15', nextService: '60,000 KM', location: 'Mysore, KA', purchaseDate: '2022-08-15',
+  },
+  {
+    id: 9, regNo: 'MH 02 AB 3456', model: 'MAN TGS 33.400', chassis: 'WMA400K2B34567', engine: 'D2676LF0134567',
+    driver: 'Deepak P', driverId: 9, gpsId: 'GPS-009', fuelCard: 'FC-2024-009', fastagId: 'FT-MH-001',
+    status: 'active', kmReading: 72340, fuelLevel: 42, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-03-25', status: 'ok' },
+      { name: 'FC', expiry: '2026-08-10', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-04-20', status: 'ok' },
+      { name: 'Permit', expiry: '2026-10-15', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-08-30', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-05-20', status: 'ok' },
+    ],
+    lastService: '2025-11-28', nextService: '75,000 KM', location: 'Mumbai, MH', purchaseDate: '2021-04-10',
+  },
+  {
+    id: 10, regNo: 'DL 01 CD 7890', model: 'Tata Signa 4018.T', chassis: 'MAT4018K2C78901', engine: 'CUMINSISB6.778901',
+    driver: 'Amit K', driverId: 10, gpsId: 'GPS-010', fuelCard: 'FC-2024-010', fastagId: 'FT-DL-001',
+    status: 'active', kmReading: 35600, fuelLevel: 90, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-07-15', status: 'ok' },
+      { name: 'FC', expiry: '2027-01-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-10-30', status: 'ok' },
+      { name: 'Permit', expiry: '2027-05-25', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-03-10', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-11-15', status: 'ok' },
+    ],
+    lastService: '2026-01-08', nextService: '38,000 KM', location: 'Delhi', purchaseDate: '2023-09-05',
+  },
+  {
+    id: 11, regNo: 'GJ 01 EF 1234', model: 'Ashok Leyland 4920', chassis: 'ALY4920K2D12345', engine: 'H6E6CRDL12345',
+    driver: 'Prakash S', driverId: 11, gpsId: 'GPS-011', fuelCard: 'FC-2024-011', fastagId: 'FT-GJ-001',
+    status: 'active', kmReading: 67890, fuelLevel: 38, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2027-11-30', status: 'ok' },
+      { name: 'FC', expiry: '2026-06-05', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-03-15', status: 'ok' },
+      { name: 'Permit', expiry: '2026-09-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-07-10', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-04-25', status: 'ok' },
+    ],
+    lastService: '2025-12-25', nextService: '70,000 KM', location: 'Ahmedabad, GJ', purchaseDate: '2021-10-20',
+  },
+  {
+    id: 12, regNo: 'AP 28 GH 5678', model: 'Eicher Pro 6055', chassis: 'ECH6055K2E56789', engine: 'E6E6CRDL56789',
+    driver: 'Krishna R', driverId: 12, gpsId: 'GPS-012', fuelCard: 'FC-2024-012', fastagId: 'FT-AP-001',
+    status: 'active', kmReading: 28450, fuelLevel: 82, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-04-10', status: 'ok' },
+      { name: 'FC', expiry: '2026-12-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-09-05', status: 'ok' },
+      { name: 'Permit', expiry: '2027-04-30', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-02-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-10-20', status: 'ok' },
+    ],
+    lastService: '2026-01-10', nextService: '32,000 KM', location: 'Hyderabad, TS', purchaseDate: '2023-11-15',
+  },
+  {
+    id: 13, regNo: 'WB 23 IJ 9012', model: 'Tata Prima 4625.T', chassis: 'MAT4625K2F90123', engine: 'CUMMINSISBE90123',
+    driver: 'Sunil D', driverId: 13, gpsId: 'GPS-013', fuelCard: 'FC-2024-013', fastagId: 'FT-WB-001',
+    status: 'inactive', kmReading: 94560, fuelLevel: 15, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2026-08-20', status: 'ok' },
+      { name: 'FC', expiry: '2026-03-10', status: 'ok' },
+      { name: 'Insurance', expiry: '2026-10-25', status: 'ok' },
+      { name: 'Permit', expiry: '2026-07-15', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-05-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-02-28', status: 'ok' },
+    ],
+    lastService: '2025-10-05', nextService: '96,000 KM', location: 'Kolkata, WB', purchaseDate: '2019-12-18',
+  },
+  {
+    id: 14, regNo: 'UP 14 KL 3456', model: 'BharatBenz 2826R', chassis: 'BBZ2826K2G34567', engine: 'OM906LA34567',
+    driver: 'Rahul M', driverId: 14, gpsId: 'GPS-014', fuelCard: 'FC-2024-014', fastagId: 'FT-UP-001',
+    status: 'active', kmReading: 51230, fuelLevel: 68, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-01-25', status: 'ok' },
+      { name: 'FC', expiry: '2026-07-30', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-06-10', status: 'ok' },
+      { name: 'Permit', expiry: '2026-12-25', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-10-30', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-05-15', status: 'ok' },
+    ],
+    lastService: '2025-12-18', nextService: '55,000 KM', location: 'Lucknow, UP', purchaseDate: '2022-06-12',
+  },
+  {
+    id: 15, regNo: 'TN 07 MN 7890', model: 'Mahindra Blazo X 28', chassis: 'MHD28XK2H78901', engine: 'mPower 6.7L78901',
+    driver: 'Kumaravel S', driverId: 15, gpsId: 'GPS-015', fuelCard: 'FC-2024-015', fastagId: 'FT-TN-007',
+    status: 'active', kmReading: 39870, fuelLevel: 75, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-09-15', status: 'ok' },
+      { name: 'FC', expiry: '2026-11-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-07-25', status: 'ok' },
+      { name: 'Permit', expiry: '2027-01-10', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-11-05', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-08-10', status: 'ok' },
+    ],
+    lastService: '2025-12-30', nextService: '42,000 KM', location: 'Tiruchirappalli, TN', purchaseDate: '2023-02-28',
+  },
+  {
+    id: 16, regNo: 'KA 03 OP 1234', model: 'Volvo FH 520', chassis: 'YV2FH520K2A12345', engine: 'D13K52012345',
+    driver: 'Naveen K', driverId: 16, gpsId: 'GPS-016', fuelCard: 'FC-2024-016', fastagId: 'FT-KA-003',
+    status: 'active', kmReading: 102340, fuelLevel: 58, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-02-28', status: 'ok' },
+      { name: 'FC', expiry: '2027-03-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-12-20', status: 'ok' },
+      { name: 'Permit', expiry: '2027-08-05', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-05-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-12-25', status: 'ok' },
+    ],
+    lastService: '2026-01-12', nextService: '105,000 KM', location: 'Hubli, KA', purchaseDate: '2020-07-08',
+  },
+  {
+    id: 17, regNo: 'MH 04 QR 5678', model: 'Scania R450', chassis: 'YSR450K2B56789', engine: 'DC13 14556789',
+    driver: 'Santosh T', driverId: 17, gpsId: 'GPS-017', fuelCard: 'FC-2024-017', fastagId: 'FT-MH-002',
+    status: 'active', kmReading: 81560, fuelLevel: 47, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-06-10', status: 'ok' },
+      { name: 'FC', expiry: '2026-10-05', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-08-15', status: 'ok' },
+      { name: 'Permit', expiry: '2027-02-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-12-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-07-30', status: 'ok' },
+    ],
+    lastService: '2025-12-22', nextService: '85,000 KM', location: 'Pune, MH', purchaseDate: '2021-05-22',
+  },
+  {
+    id: 18, regNo: 'DL 02 ST 9012', model: 'MAN TGX 33.480', chassis: 'WMA480K2C90123', engine: 'D2676LF0290123',
+    driver: 'Vikram S', driverId: 18, gpsId: 'GPS-018', fuelCard: 'FC-2024-018', fastagId: 'FT-DL-002',
+    status: 'active', kmReading: 41200, fuelLevel: 83, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-05-05', status: 'ok' },
+      { name: 'FC', expiry: '2027-02-10', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-11-25', status: 'ok' },
+      { name: 'Permit', expiry: '2027-06-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-04-05', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-12-10', status: 'ok' },
+    ],
+    lastService: '2026-01-06', nextService: '44,000 KM', location: 'Noida, UP', purchaseDate: '2023-07-30',
+  },
+  {
+    id: 19, regNo: 'GJ 02 UV 3456', model: 'Ashok Leyland 4220', chassis: 'ALY4220K2D34567', engine: 'H6E5CRDL34567',
+    driver: 'Dinesh P', driverId: 19, gpsId: 'GPS-019', fuelCard: 'FC-2024-019', fastagId: 'FT-GJ-002',
+    status: 'active', kmReading: 59870, fuelLevel: 52, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-02-20', status: 'ok' },
+      { name: 'FC', expiry: '2026-08-25', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-05-30', status: 'ok' },
+      { name: 'Permit', expiry: '2026-11-10', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-09-25', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-06-15', status: 'ok' },
+    ],
+    lastService: '2025-12-08', nextService: '63,000 KM', location: 'Surat, GJ', purchaseDate: '2022-03-25',
+  },
+  {
+    id: 20, regNo: 'AP 29 WX 7890', model: 'Eicher Pro 2114', chassis: 'ECH2114K2E78901', engine: 'E6E4CRDL78901',
+    driver: 'Ravi K', driverId: 20, gpsId: 'GPS-020', fuelCard: 'FC-2024-020', fastagId: 'FT-AP-002',
+    status: 'inactive', kmReading: 87650, fuelLevel: 25, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2026-12-15', status: 'ok' },
+      { name: 'FC', expiry: '2026-04-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2026-11-10', status: 'ok' },
+      { name: 'Permit', expiry: '2026-08-05', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-06-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-03-15', status: 'ok' },
+    ],
+    lastService: '2025-11-12', nextService: '90,000 KM', location: 'Vijayawada, AP', purchaseDate: '2020-09-10',
+  },
+  {
+    id: 21, regNo: 'TN 10 YZ 1234', model: 'Tata LPT 2518', chassis: 'MAT2518K2I12345', engine: '697TCI12345',
+    driver: 'Balaji M', driverId: 21, gpsId: 'GPS-021', fuelCard: 'FC-2024-021', fastagId: 'FT-TN-008',
+    status: 'active', kmReading: 62340, fuelLevel: 40, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-04-25', status: 'ok' },
+      { name: 'FC', expiry: '2026-09-30', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-06-05', status: 'ok' },
+      { name: 'Permit', expiry: '2027-01-15', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-11-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-04-10', status: 'ok' },
+    ],
+    lastService: '2025-12-02', nextService: '65,000 KM', location: 'Vellore, TN', purchaseDate: '2022-01-18',
+  },
+  {
+    id: 22, regNo: 'KA 05 AB 5678', model: 'BharatBenz 1923C', chassis: 'BBZ1923K2A56789', engine: 'OM906LA56789',
+    driver: 'Sreenivas R', driverId: 22, gpsId: 'GPS-022', fuelCard: 'FC-2024-022', fastagId: 'FT-KA-004',
+    status: 'active', kmReading: 34560, fuelLevel: 72, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-08-10', status: 'ok' },
+      { name: 'FC', expiry: '2026-12-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-09-25', status: 'ok' },
+      { name: 'Permit', expiry: '2027-03-10', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-01-05', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-10-05', status: 'ok' },
+    ],
+    lastService: '2026-01-03', nextService: '37,000 KM', location: 'Belgaum, KA', purchaseDate: '2023-08-22',
+  },
+  {
+    id: 23, regNo: 'MH 05 CD 9012', model: 'Ashok Leyland 2820', chassis: 'ALY2820K2B90123', engine: 'H6E4CRDL90123',
+    driver: 'Manish J', driverId: 23, gpsId: 'GPS-023', fuelCard: 'FC-2024-023', fastagId: 'FT-MH-003',
+    status: 'active', kmReading: 48920, fuelLevel: 65, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-10-05', status: 'ok' },
+      { name: 'FC', expiry: '2026-11-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-07-20', status: 'ok' },
+      { name: 'Permit', expiry: '2027-02-05', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-12-10', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-08-15', status: 'ok' },
+    ],
+    lastService: '2025-12-14', nextService: '52,000 KM', location: 'Nagpur, MH', purchaseDate: '2022-07-15',
+  },
+  {
+    id: 24, regNo: 'DL 03 EF 3456', model: 'Tata Ultra 1918.T', chassis: 'MAT1918K2C34567', engine: '3.3L NG34567',
+    driver: 'Anil G', driverId: 24, gpsId: 'GPS-024', fuelCard: 'FC-2024-024', fastagId: 'FT-DL-003',
+    status: 'active', kmReading: 26780, fuelLevel: 88, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-12-20', status: 'ok' },
+      { name: 'FC', expiry: '2027-04-10', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-10-15', status: 'ok' },
+      { name: 'Permit', expiry: '2027-06-25', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-03-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-11-20', status: 'ok' },
+    ],
+    lastService: '2026-01-09', nextService: '29,000 KM', location: 'Gurgaon, HR', purchaseDate: '2024-01-10',
+  },
+  {
+    id: 25, regNo: 'GJ 03 GH 7890', model: 'Mahindra Blazo X 16', chassis: 'MHD16XK2D78901', engine: 'mPower 4.7L78901',
+    driver: 'Jignesh P', driverId: 25, gpsId: 'GPS-025', fuelCard: 'FC-2024-025', fastagId: 'FT-GJ-003',
+    status: 'active', kmReading: 34560, fuelLevel: 55, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-06-30', status: 'ok' },
+      { name: 'FC', expiry: '2026-10-15', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-05-20', status: 'ok' },
+      { name: 'Permit', expiry: '2026-12-30', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-10-15', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-07-05', status: 'ok' },
+    ],
+    lastService: '2025-12-26', nextService: '37,000 KM', location: 'Rajkot, GJ', purchaseDate: '2023-04-05',
+  },
+  {
+    id: 26, regNo: 'AP 30 IJ 1234', model: 'Eicher Pro 2055', chassis: 'ECH2055K2F12345', engine: 'E6E3CRDL12345',
+    driver: 'Srikanth V', driverId: 26, gpsId: 'GPS-026', fuelCard: 'FC-2024-026', fastagId: 'FT-AP-003',
+    status: 'active', kmReading: 19870, fuelLevel: 92, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-09-15', status: 'ok' },
+      { name: 'FC', expiry: '2027-05-25', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-11-10', status: 'ok' },
+      { name: 'Permit', expiry: '2027-07-15', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-04-20', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-12-15', status: 'ok' },
+    ],
+    lastService: '2026-01-11', nextService: '22,000 KM', location: 'Visakhapatnam, AP', purchaseDate: '2024-05-20',
+  },
+  {
+    id: 27, regNo: 'TN 11 KL 5678', model: 'Ashok Leyland 4325', chassis: 'ALY4325K2J56789', engine: 'H6E6CRDL56789',
+    driver: 'Govindaraj S', driverId: 27, gpsId: 'GPS-027', fuelCard: 'FC-2024-027', fastagId: 'FT-TN-009',
+    status: 'active', kmReading: 73450, fuelLevel: 35, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2028-03-20', status: 'ok' },
+      { name: 'FC', expiry: '2026-09-05', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-08-30', status: 'ok' },
+      { name: 'Permit', expiry: '2027-01-25', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-11-30', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-05-25', status: 'ok' },
+    ],
+    lastService: '2025-11-30', nextService: '77,000 KM', location: 'Tirunelveli, TN', purchaseDate: '2021-12-08',
+  },
+  {
+    id: 28, regNo: 'KA 06 MN 9012', model: 'Volvo FMX 440', chassis: 'YV2FMX440K2A90123', engine: 'D11K44090123',
+    driver: 'Prashanth N', driverId: 28, gpsId: 'GPS-028', fuelCard: 'FC-2024-028', fastagId: 'FT-KA-005',
+    status: 'active', kmReading: 61230, fuelLevel: 48, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-01-30', status: 'ok' },
+      { name: 'FC', expiry: '2027-02-20', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-10-05', status: 'ok' },
+      { name: 'Permit', expiry: '2027-05-10', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-02-25', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-09-20', status: 'ok' },
+    ],
+    lastService: '2025-12-19', nextService: '65,000 KM', location: 'Mangalore, KA', purchaseDate: '2022-04-12',
+  },
+  {
+    id: 29, regNo: 'MH 06 OP 3456', model: 'Scania G410', chassis: 'YSR410K2C34567', engine: 'DC13 07834567',
+    driver: 'Mukesh T', driverId: 29, gpsId: 'GPS-029', fuelCard: 'FC-2024-029', fastagId: 'FT-MH-004',
+    status: 'inactive', kmReading: 95670, fuelLevel: 18, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2026-10-15', status: 'ok' },
+      { name: 'FC', expiry: '2026-05-10', status: 'ok' },
+      { name: 'Insurance', expiry: '2026-12-20', status: 'ok' },
+      { name: 'Permit', expiry: '2026-09-05', status: 'ok' },
+      { name: 'National Permit', expiry: '2026-07-10', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-04-05', status: 'ok' },
+    ],
+    lastService: '2025-10-20', nextService: '98,000 KM', location: 'Nashik, MH', purchaseDate: '2019-11-25',
+  },
+  {
+    id: 30, regNo: 'DL 04 QR 7890', model: 'Tata Signa 5525.S', chassis: 'MAT5525K2D78901', engine: 'CUMMINSISX1178901',
+    driver: 'Rohit K', driverId: 30, gpsId: 'GPS-030', fuelCard: 'FC-2024-030', fastagId: 'FT-DL-004',
+    status: 'active', kmReading: 44560, fuelLevel: 62, photo: '',
+    documents: [
+      { name: 'RC', expiry: '2029-06-25', status: 'ok' },
+      { name: 'FC', expiry: '2027-03-30', status: 'ok' },
+      { name: 'Insurance', expiry: '2027-12-15', status: 'ok' },
+      { name: 'Permit', expiry: '2027-08-20', status: 'ok' },
+      { name: 'National Permit', expiry: '2027-05-25', status: 'ok' },
+      { name: 'Road Tax', expiry: '2027-03-31', status: 'ok' },
+      { name: 'PUC', expiry: '2026-11-30', status: 'ok' },
+    ],
+    lastService: '2026-01-04', nextService: '47,000 KM', location: 'Faridabad, HR', purchaseDate: '2022-10-15',
+  },
+];
+
+// Initial Data - 30 Drivers
+const initialDrivers: Driver[] = [
+  {
+    id: 1, name: 'Rajan Kumar', empId: 'EMP-001', phone: '+91 98765 43210',
+    license: 'TN0120240012345', licenseExpiry: '2027-01-25', insurance: 'HDFC-DRV-001', insuranceExpiry: '2027-08-15',
+    status: 'active', vehicle: 'TN 09 AB 1234', vehicleId: 1, joinDate: '2020-03-15', address: '12, Anna Nagar, Chennai - 600040',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
+    trips: 342, kmDriven: 48320, fuelEfficiency: '4.9', rating: 4.7, violations: 0, lastTrip: '2026-01-15', experience: '6 Years',
+  },
+  {
+    id: 2, name: 'Suresh Babu', empId: 'EMP-002', phone: '+91 87654 32109',
+    license: 'TN0220230023456', licenseExpiry: '2027-02-10', insurance: 'LIC-DRV-002', insuranceExpiry: '2027-09-20',
+    status: 'active', vehicle: 'TN 09 CD 5678', vehicleId: 2, joinDate: '2019-07-20', address: '45, RS Puram, Coimbatore - 641002',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80',
+    trips: 428, kmDriven: 62150, fuelEfficiency: '4.5', rating: 4.3, violations: 1, lastTrip: '2026-01-14', experience: '7 Years',
+  },
+  {
+    id: 3, name: 'Murugan S', empId: 'EMP-003', phone: '+91 76543 21098',
+    license: 'TN0320250034567', licenseExpiry: '2028-05-30', insurance: 'ICICI-DRV-003', insuranceExpiry: '2028-03-10',
+    status: 'active', vehicle: 'TN 09 EF 9012', vehicleId: 3, joinDate: '2022-01-10', address: '78, Meenakshi Nagar, Madurai - 625001',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80',
+    trips: 198, kmDriven: 31200, fuelEfficiency: '5.1', rating: 4.8, violations: 0, lastTrip: '2026-01-15', experience: '4 Years',
+  },
+  {
+    id: 4, name: 'Vijay R', empId: 'EMP-004', phone: '+91 65432 10987',
+    license: 'TN0420220045678', licenseExpiry: '2026-11-15', insurance: 'SBI-DRV-004', insuranceExpiry: '2027-05-25',
+    status: 'inactive', vehicle: 'TN 09 GH 3456', vehicleId: 4, joinDate: '2018-11-05', address: '23, Thillai Nagar, Trichy - 620018',
+    photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&q=80',
+    trips: 512, kmDriven: 78900, fuelEfficiency: '4.2', rating: 3.9, violations: 3, lastTrip: '2025-12-20', experience: '8 Years',
+  },
+  {
+    id: 5, name: 'Karthik M', empId: 'EMP-005', phone: '+91 54321 09876',
+    license: 'TN0520240056789', licenseExpiry: '2028-08-20', insurance: 'BAJAJ-DRV-005', insuranceExpiry: '2028-06-30',
+    status: 'active', vehicle: 'TN 09 IJ 7890', vehicleId: 5, joinDate: '2023-06-01', address: '56, Fairlands, Salem - 636016',
+    photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&q=80',
+    trips: 124, kmDriven: 22400, fuelEfficiency: '5.3', rating: 4.9, violations: 0, lastTrip: '2026-01-15', experience: '3 Years',
+  },
+  {
+    id: 6, name: 'Selvam P', empId: 'EMP-006', phone: '+91 43210 98765',
+    license: 'TN0620230067890', licenseExpiry: '2027-12-10', insurance: 'STAR-DRV-006', insuranceExpiry: '2027-10-15',
+    status: 'active', vehicle: 'TN 09 KL 2345', vehicleId: 6, joinDate: '2021-04-15', address: '89, Gandhipuram, Coimbatore - 641012',
+    photo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&q=80',
+    trips: 267, kmDriven: 41800, fuelEfficiency: '4.7', rating: 4.5, violations: 0, lastTrip: '2026-01-12', experience: '5 Years',
+  },
+  {
+    id: 7, name: 'Ramesh G', empId: 'EMP-007', phone: '+91 98765 54321',
+    license: 'KA0120220078901', licenseExpiry: '2027-05-20', insurance: 'HDFC-DRV-007', insuranceExpiry: '2027-12-25',
+    status: 'active', vehicle: 'KA 01 MN 5678', vehicleId: 7, joinDate: '2020-11-20', address: '34, Indiranagar, Bangalore - 560038',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&q=80',
+    trips: 456, kmDriven: 89450, fuelEfficiency: '4.8', rating: 4.6, violations: 2, lastTrip: '2026-01-13', experience: '6 Years',
+  },
+  {
+    id: 8, name: 'Shankar N', empId: 'EMP-008', phone: '+91 87654 54321',
+    license: 'KA0220210089012', licenseExpiry: '2026-09-25', insurance: 'ICICI-DRV-008', insuranceExpiry: '2027-04-15',
+    status: 'active', vehicle: 'KA 02 OP 9012', vehicleId: 8, joinDate: '2022-08-15', address: '67, Vijayanagar, Mysore - 570017',
+    photo: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&q=80',
+    trips: 289, kmDriven: 56780, fuelEfficiency: '5.0', rating: 4.7, violations: 0, lastTrip: '2026-01-14', experience: '4 Years',
+  },
+  {
+    id: 9, name: 'Deepak P', empId: 'EMP-009', phone: '+91 76543 45678',
+    license: 'MH0120200090123', licenseExpiry: '2026-08-10', insurance: 'SBI-DRV-009', insuranceExpiry: '2027-03-30',
+    status: 'active', vehicle: 'MH 02 AB 3456', vehicleId: 9, joinDate: '2021-04-10', address: '90, Dadar West, Mumbai - 400028',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80',
+    trips: 378, kmDriven: 72340, fuelEfficiency: '4.6', rating: 4.4, violations: 1, lastTrip: '2026-01-12', experience: '5 Years',
+  },
+  {
+    id: 10, name: 'Amit K', empId: 'EMP-010', phone: '+91 65432 34567',
+    license: 'DL0120230101234', licenseExpiry: '2027-01-20', insurance: 'BAJAJ-DRV-010', insuranceExpiry: '2027-08-10',
+    status: 'active', vehicle: 'DL 01 CD 7890', vehicleId: 10, joinDate: '2023-09-05', address: '12, Sector 15, Rohini - 110089',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
+    trips: 156, kmDriven: 35600, fuelEfficiency: '5.2', rating: 4.8, violations: 0, lastTrip: '2026-01-15', experience: '3 Years',
+  },
+  {
+    id: 11, name: 'Prakash S', empId: 'EMP-011', phone: '+91 54321 23456',
+    license: 'GJ0120210112345', licenseExpiry: '2026-06-05', insurance: 'STAR-DRV-011', insuranceExpiry: '2027-01-20',
+    status: 'active', vehicle: 'GJ 01 EF 1234', vehicleId: 11, joinDate: '2021-10-20', address: '45, Navrangpura, Ahmedabad - 380009',
+    photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&q=80',
+    trips: 398, kmDriven: 67890, fuelEfficiency: '4.4', rating: 4.2, violations: 2, lastTrip: '2026-01-13', experience: '5 Years',
+  },
+  {
+    id: 12, name: 'Krishna R', empId: 'EMP-012', phone: '+91 43210 12345',
+    license: 'TS0120220123456', licenseExpiry: '2026-12-15', insurance: 'HDFC-DRV-012', insuranceExpiry: '2027-07-15',
+    status: 'active', vehicle: 'AP 28 GH 5678', vehicleId: 12, joinDate: '2023-11-15', address: '78, Kukatpally, Hyderabad - 500072',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80',
+    trips: 189, kmDriven: 28450, fuelEfficiency: '5.1', rating: 4.7, violations: 0, lastTrip: '2026-01-14', experience: '3 Years',
+  },
+  {
+    id: 13, name: 'Sunil D', empId: 'EMP-013', phone: '+91 98765 67890',
+    license: 'WB0120190134567', licenseExpiry: '2026-03-10', insurance: 'LIC-DRV-013', insuranceExpiry: '2026-09-20',
+    status: 'inactive', vehicle: 'WB 23 IJ 9012', vehicleId: 13, joinDate: '2019-12-18', address: '23, Behala, Kolkata - 700034',
+    photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&q=80',
+    trips: 567, kmDriven: 94560, fuelEfficiency: '4.0', rating: 3.8, violations: 4, lastTrip: '2025-12-15', experience: '7 Years',
+  },
+  {
+    id: 14, name: 'Rahul M', empId: 'EMP-014', phone: '+91 87654 67890',
+    license: 'UP0120210145678', licenseExpiry: '2026-07-30', insurance: 'ICICI-DRV-014', insuranceExpiry: '2027-02-20',
+    status: 'active', vehicle: 'UP 14 KL 3456', vehicleId: 14, joinDate: '2022-06-12', address: '56, Gomti Nagar, Lucknow - 226010',
+    photo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&q=80',
+    trips: 312, kmDriven: 51230, fuelEfficiency: '4.7', rating: 4.5, violations: 1, lastTrip: '2026-01-12', experience: '4 Years',
+  },
+  {
+    id: 15, name: 'Kumaravel S', empId: 'EMP-015', phone: '+91 76543 56789',
+    license: 'TN0720220156789', licenseExpiry: '2026-11-20', insurance: 'SBI-DRV-015', insuranceExpiry: '2027-06-10',
+    status: 'active', vehicle: 'TN 07 MN 7890', vehicleId: 15, joinDate: '2023-02-28', address: '89, Cantonment, Tiruchirappalli - 620001',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&q=80',
+    trips: 234, kmDriven: 39870, fuelEfficiency: '5.0', rating: 4.6, violations: 0, lastTrip: '2026-01-13', experience: '4 Years',
+  },
+  {
+    id: 16, name: 'Naveen K', empId: 'EMP-016', phone: '+91 65432 56789',
+    license: 'KA0320200167890', licenseExpiry: '2027-03-15', insurance: 'BAJAJ-DRV-016', insuranceExpiry: '2027-11-10',
+    status: 'active', vehicle: 'KA 03 OP 1234', vehicleId: 16, joinDate: '2020-07-08', address: '12, Vidyanagar, Hubli - 580021',
+    photo: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&q=80',
+    trips: 489, kmDriven: 102340, fuelEfficiency: '4.9', rating: 4.8, violations: 1, lastTrip: '2026-01-15', experience: '6 Years',
+  },
+  {
+    id: 17, name: 'Santosh T', empId: 'EMP-017', phone: '+91 54321 45678',
+    license: 'MH0420210178901', licenseExpiry: '2026-10-05', insurance: 'STAR-DRV-017', insuranceExpiry: '2027-05-15',
+    status: 'active', vehicle: 'MH 04 QR 5678', vehicleId: 17, joinDate: '2021-05-22', address: '34, Kalyani Nagar, Pune - 411014',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80',
+    trips: 401, kmDriven: 81560, fuelEfficiency: '4.5', rating: 4.3, violations: 2, lastTrip: '2026-01-14', experience: '5 Years',
+  },
+  {
+    id: 18, name: 'Vikram S', empId: 'EMP-018', phone: '+91 43210 45678',
+    license: 'DL0220230189012', licenseExpiry: '2027-02-10', insurance: 'HDFC-DRV-018', insuranceExpiry: '2027-09-05',
+    status: 'active', vehicle: 'DL 02 ST 9012', vehicleId: 18, joinDate: '2023-07-30', address: '56, Sector 62, Noida - 201309',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
+    trips: 178, kmDriven: 41200, fuelEfficiency: '5.1', rating: 4.7, violations: 0, lastTrip: '2026-01-15', experience: '3 Years',
+  },
+  {
+    id: 19, name: 'Dinesh P', empId: 'EMP-019', phone: '+91 98765 78901',
+    license: 'GJ0220220190123', licenseExpiry: '2026-08-25', insurance: 'LIC-DRV-019', insuranceExpiry: '2027-03-20',
+    status: 'active', vehicle: 'GJ 02 UV 3456', vehicleId: 19, joinDate: '2022-03-25', address: '78, Vesu, Surat - 395007',
+    photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&q=80',
+    trips: 345, kmDriven: 59870, fuelEfficiency: '4.6', rating: 4.4, violations: 1, lastTrip: '2026-01-13', experience: '4 Years',
+  },
+  {
+    id: 20, name: 'Ravi K', empId: 'EMP-020', phone: '+91 87654 78901',
+    license: 'AP0120190201234', licenseExpiry: '2026-04-20', insurance: 'ICICI-DRV-020', insuranceExpiry: '2026-10-10',
+    status: 'inactive', vehicle: 'AP 29 WX 7890', vehicleId: 20, joinDate: '2020-09-10', address: '23, Benz Circle, Vijayawada - 520010',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80',
+    trips: 523, kmDriven: 87650, fuelEfficiency: '4.1', rating: 3.9, violations: 3, lastTrip: '2025-12-18', experience: '6 Years',
+  },
+  {
+    id: 21, name: 'Balaji M', empId: 'EMP-021', phone: '+91 76543 67890',
+    license: 'TN1020210212345', licenseExpiry: '2026-09-30', insurance: 'SBI-DRV-021', insuranceExpiry: '2027-04-05',
+    status: 'active', vehicle: 'TN 10 YZ 1234', vehicleId: 21, joinDate: '2022-01-18', address: '45, Katpadi, Vellore - 632006',
+    photo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&q=80',
+    trips: 367, kmDriven: 62340, fuelEfficiency: '4.5', rating: 4.3, violations: 1, lastTrip: '2026-01-12', experience: '5 Years',
+  },
+  {
+    id: 22, name: 'Sreenivas R', empId: 'EMP-022', phone: '+91 65432 67890',
+    license: 'KA0520230223456', licenseExpiry: '2026-12-20', insurance: 'BAJAJ-DRV-022', insuranceExpiry: '2027-08-15',
+    status: 'active', vehicle: 'KA 05 AB 5678', vehicleId: 22, joinDate: '2023-08-22', address: '67, Camp, Belgaum - 590001',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&q=80',
+    trips: 198, kmDriven: 34560, fuelEfficiency: '5.0', rating: 4.6, violations: 0, lastTrip: '2026-01-14', experience: '3 Years',
+  },
+  {
+    id: 23, name: 'Manish J', empId: 'EMP-023', phone: '+91 54321 56789',
+    license: 'MH0520220234567', licenseExpiry: '2026-11-15', insurance: 'STAR-DRV-023', insuranceExpiry: '2027-06-05',
+    status: 'active', vehicle: 'MH 05 CD 9012', vehicleId: 23, joinDate: '2022-07-15', address: '90, Dhantoli, Nagpur - 440012',
+    photo: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&q=80',
+    trips: 289, kmDriven: 48920, fuelEfficiency: '4.7', rating: 4.5, violations: 0, lastTrip: '2026-01-13', experience: '4 Years',
+  },
+  {
+    id: 24, name: 'Anil G', empId: 'EMP-024', phone: '+91 43210 56789',
+    license: 'DL0320240245678', licenseExpiry: '2027-04-10', insurance: 'HDFC-DRV-024', insuranceExpiry: '2027-10-05',
+    status: 'active', vehicle: 'DL 03 EF 3456', vehicleId: 24, joinDate: '2024-01-10', address: '12, Sector 56, Gurgaon - 122011',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80',
+    trips: 112, kmDriven: 26780, fuelEfficiency: '5.2', rating: 4.8, violations: 0, lastTrip: '2026-01-15', experience: '2 Years',
+  },
+  {
+    id: 25, name: 'Jignesh P', empId: 'EMP-025', phone: '+91 98765 89012',
+    license: 'GJ0320220256789', licenseExpiry: '2026-10-15', insurance: 'LIC-DRV-025', insuranceExpiry: '2027-04-20',
+    status: 'active', vehicle: 'GJ 03 GH 7890', vehicleId: 25, joinDate: '2023-04-05', address: '34, Yagnik Road, Rajkot - 360001',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
+    trips: 234, kmDriven: 34560, fuelEfficiency: '4.8', rating: 4.5, violations: 0, lastTrip: '2026-01-14', experience: '3 Years',
+  },
+  {
+    id: 26, name: 'Srikanth V', empId: 'EMP-026', phone: '+91 87654 89012',
+    license: 'AP0220240267890', licenseExpiry: '2027-05-25', insurance: 'ICICI-DRV-026', insuranceExpiry: '2027-11-10',
+    status: 'active', vehicle: 'AP 30 IJ 1234', vehicleId: 26, joinDate: '2024-05-20', address: '56, MVP Colony, Visakhapatnam - 530017',
+    photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&q=80',
+    trips: 87, kmDriven: 19870, fuelEfficiency: '5.1', rating: 4.7, violations: 0, lastTrip: '2026-01-15', experience: '2 Years',
+  },
+  {
+    id: 27, name: 'Govindaraj S', empId: 'EMP-027', phone: '+91 76543 78901',
+    license: 'TN1120200278901', licenseExpiry: '2026-09-05', insurance: 'SBI-DRV-027', insuranceExpiry: '2027-02-20',
+    status: 'active', vehicle: 'TN 11 KL 5678', vehicleId: 27, joinDate: '2021-12-08', address: '78, Palayamkottai, Tirunelveli - 627002',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80',
+    trips: 412, kmDriven: 73450, fuelEfficiency: '4.4', rating: 4.2, violations: 2, lastTrip: '2026-01-12', experience: '5 Years',
+  },
+  {
+    id: 28, name: 'Prashanth N', empId: 'EMP-028', phone: '+91 65432 78901',
+    license: 'KA0620210289012', licenseExpiry: '2027-02-20', insurance: 'BAJAJ-DRV-028', insuranceExpiry: '2027-09-15',
+    status: 'active', vehicle: 'KA 06 MN 9012', vehicleId: 28, joinDate: '2022-04-12', address: '90, Car Street, Mangalore - 575001',
+    photo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&q=80',
+    trips: 323, kmDriven: 61230, fuelEfficiency: '4.6', rating: 4.4, violations: 1, lastTrip: '2026-01-13', experience: '4 Years',
+  },
+  {
+    id: 29, name: 'Mukesh T', empId: 'EMP-029', phone: '+91 54321 67890',
+    license: 'MH0620190290123', licenseExpiry: '2026-05-10', insurance: 'STAR-DRV-029', insuranceExpiry: '2026-11-05',
+    status: 'inactive', vehicle: 'MH 06 OP 3456', vehicleId: 29, joinDate: '2019-11-25', address: '23, Gangapur Road, Nashik - 422013',
+    photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&q=80',
+    trips: 545, kmDriven: 95670, fuelEfficiency: '4.0', rating: 3.8, violations: 3, lastTrip: '2025-12-22', experience: '7 Years',
+  },
+  {
+    id: 30, name: 'Rohit K', empId: 'EMP-030', phone: '+91 43210 67890',
+    license: 'DL0420220301234', licenseExpiry: '2027-03-30', insurance: 'HDFC-DRV-030', insuranceExpiry: '2027-11-15',
+    status: 'active', vehicle: 'DL 04 QR 7890', vehicleId: 30, joinDate: '2022-10-15', address: '45, Sector 21, Faridabad - 121001',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&q=80',
+    trips: 289, kmDriven: 44560, fuelEfficiency: '4.7', rating: 4.5, violations: 1, lastTrip: '2026-01-14', experience: '4 Years',
+  },
+];
+
+// Initial Data - 30 Fuel Entries
+const initialFuelEntries: FuelEntry[] = [
+  { id: 1, vehicle: 'TN 09 AB 1234', vehicleId: 1, driver: 'Rajan Kumar', driverId: 1, date: '2026-01-15', km: 48320, fuel: 85, cost: 8415, kmpl: 4.9, vendor: 'HP Petrol Pump, Chennai' },
+  { id: 2, vehicle: 'TN 09 CD 5678', vehicleId: 2, driver: 'Suresh Babu', driverId: 2, date: '2026-01-14', km: 62150, fuel: 92, cost: 9108, kmpl: 4.5, vendor: 'BPCL, Coimbatore' },
+  { id: 3, vehicle: 'TN 09 EF 9012', vehicleId: 3, driver: 'Murugan S', driverId: 3, date: '2026-01-14', km: 31200, fuel: 78, cost: 7722, kmpl: 5.1, vendor: 'IOC, Madurai' },
+  { id: 4, vehicle: 'TN 09 IJ 7890', vehicleId: 5, driver: 'Karthik M', driverId: 5, date: '2026-01-13', km: 22400, fuel: 65, cost: 6435, kmpl: 5.3, vendor: 'HP, Salem' },
+  { id: 5, vehicle: 'TN 09 AB 1234', vehicleId: 1, driver: 'Rajan Kumar', driverId: 1, date: '2026-01-10', km: 47800, fuel: 88, cost: 8712, kmpl: 4.8, vendor: 'BPCL, Chennai' },
+  { id: 6, vehicle: 'KA 01 MN 5678', vehicleId: 7, driver: 'Ramesh G', driverId: 7, date: '2026-01-15', km: 89450, fuel: 145, cost: 14355, kmpl: 4.8, vendor: 'Shell, Bangalore' },
+  { id: 7, vehicle: 'MH 02 AB 3456', vehicleId: 9, driver: 'Deepak P', driverId: 9, date: '2026-01-14', km: 72340, fuel: 128, cost: 12672, kmpl: 4.6, vendor: 'HP, Mumbai' },
+  { id: 8, vehicle: 'DL 01 CD 7890', vehicleId: 10, driver: 'Amit K', driverId: 10, date: '2026-01-13', km: 35600, fuel: 58, cost: 5742, kmpl: 5.2, vendor: 'IOC, Delhi' },
+  { id: 9, vehicle: 'GJ 01 EF 1234', vehicleId: 11, driver: 'Prakash S', driverId: 11, date: '2026-01-12', km: 67890, fuel: 115, cost: 11385, kmpl: 4.4, vendor: 'Reliance, Ahmedabad' },
+  { id: 10, vehicle: 'TN 09 KL 2345', vehicleId: 6, driver: 'Selvam P', driverId: 6, date: '2026-01-11', km: 41800, fuel: 75, cost: 7425, kmpl: 4.7, vendor: 'HP, Erode' },
+  { id: 11, vehicle: 'KA 02 OP 9012', vehicleId: 8, driver: 'Shankar N', driverId: 8, date: '2026-01-10', km: 56780, fuel: 98, cost: 9702, kmpl: 5.0, vendor: 'BPCL, Mysore' },
+  { id: 12, vehicle: 'UP 14 KL 3456', vehicleId: 14, driver: 'Rahul M', driverId: 14, date: '2026-01-09', km: 51230, fuel: 92, cost: 9108, kmpl: 4.7, vendor: 'IOC, Lucknow' },
+  { id: 13, vehicle: 'TN 07 MN 7890', vehicleId: 15, driver: 'Kumaravel S', driverId: 15, date: '2026-01-08', km: 39870, fuel: 70, cost: 6930, kmpl: 5.0, vendor: 'HP, Trichy' },
+  { id: 14, vehicle: 'KA 03 OP 1234', vehicleId: 16, driver: 'Naveen K', driverId: 16, date: '2026-01-07', km: 102340, fuel: 168, cost: 16632, kmpl: 4.9, vendor: 'Shell, Hubli' },
+  { id: 15, vehicle: 'MH 04 QR 5678', vehicleId: 17, driver: 'Santosh T', driverId: 17, date: '2026-01-06', km: 81560, fuel: 142, cost: 14058, kmpl: 4.5, vendor: 'BPCL, Pune' },
+  { id: 16, vehicle: 'TN 09 CD 5678', vehicleId: 2, driver: 'Suresh Babu', driverId: 2, date: '2026-01-05', km: 61600, fuel: 89, cost: 8811, kmpl: 4.6, vendor: 'IOC, Coimbatore' },
+  { id: 17, vehicle: 'DL 02 ST 9012', vehicleId: 18, driver: 'Vikram S', driverId: 18, date: '2026-01-04', km: 41200, fuel: 72, cost: 7128, kmpl: 5.1, vendor: 'HP, Noida' },
+  { id: 18, vehicle: 'GJ 02 UV 3456', vehicleId: 19, driver: 'Dinesh P', driverId: 19, date: '2026-01-03', km: 59870, fuel: 104, cost: 10296, kmpl: 4.6, vendor: 'Reliance, Surat' },
+  { id: 19, vehicle: 'TN 10 YZ 1234', vehicleId: 21, driver: 'Balaji M', driverId: 21, date: '2026-01-02', km: 62340, fuel: 108, cost: 10692, kmpl: 4.5, vendor: 'BPCL, Vellore' },
+  { id: 20, vehicle: 'KA 05 AB 5678', vehicleId: 22, driver: 'Sreenivas R', driverId: 22, date: '2026-01-01', km: 34560, fuel: 62, cost: 6138, kmpl: 5.0, vendor: 'Shell, Belgaum' },
+  { id: 21, vehicle: 'MH 05 CD 9012', vehicleId: 23, driver: 'Manish J', driverId: 23, date: '2025-12-31', km: 48920, fuel: 86, cost: 8514, kmpl: 4.7, vendor: 'IOC, Nagpur' },
+  { id: 22, vehicle: 'DL 03 EF 3456', vehicleId: 24, driver: 'Anil G', driverId: 24, date: '2025-12-30', km: 26780, fuel: 48, cost: 4752, kmpl: 5.2, vendor: 'HP, Gurgaon' },
+  { id: 23, vehicle: 'GJ 03 GH 7890', vehicleId: 25, driver: 'Jignesh P', driverId: 25, date: '2025-12-29', km: 34560, fuel: 60, cost: 5940, kmpl: 4.8, vendor: 'Reliance, Rajkot' },
+  { id: 24, vehicle: 'AP 30 IJ 1234', vehicleId: 26, driver: 'Srikanth V', driverId: 26, date: '2025-12-28', km: 19870, fuel: 35, cost: 3465, kmpl: 5.1, vendor: 'IOC, Visakhapatnam' },
+  { id: 25, vehicle: 'TN 11 KL 5678', vehicleId: 27, driver: 'Govindaraj S', driverId: 27, date: '2025-12-27', km: 73450, fuel: 128, cost: 12672, kmpl: 4.4, vendor: 'HP, Tirunelveli' },
+  { id: 26, vehicle: 'KA 06 MN 9012', vehicleId: 28, driver: 'Prashanth N', driverId: 28, date: '2025-12-26', km: 61230, fuel: 108, cost: 10692, kmpl: 4.6, vendor: 'BPCL, Mangalore' },
+  { id: 27, vehicle: 'TN 09 EF 9012', vehicleId: 3, driver: 'Murugan S', driverId: 3, date: '2025-12-25', km: 30800, fuel: 55, cost: 5445, kmpl: 5.0, vendor: 'Shell, Madurai' },
+  { id: 28, vehicle: 'DL 04 QR 7890', vehicleId: 30, driver: 'Rohit K', driverId: 30, date: '2025-12-24', km: 44560, fuel: 78, cost: 7722, kmpl: 4.7, vendor: 'IOC, Faridabad' },
+  { id: 29, vehicle: 'TN 09 IJ 7890', vehicleId: 5, driver: 'Karthik M', driverId: 5, date: '2025-12-23', km: 22000, fuel: 38, cost: 3762, kmpl: 5.2, vendor: 'HP, Salem' },
+  { id: 30, vehicle: 'KA 01 MN 5678', vehicleId: 7, driver: 'Ramesh G', driverId: 7, date: '2025-12-22', km: 88900, fuel: 140, cost: 13860, kmpl: 4.7, vendor: 'Reliance, Bangalore' },
+];
+
+// Initial Data - 30 Trips
+const initialTrips: Trip[] = [
+  { id: 1, vehicle: 'TN 09 AB 1234', vehicleId: 1, driver: 'Rajan Kumar', driverId: 1, from: 'Chennai', to: 'Bangalore', date: '2026-01-15', distance: 350, freight: 28000, fuelCost: 9800, tollCost: 1200, otherCost: 800, status: 'active' },
+  { id: 2, vehicle: 'TN 09 CD 5678', vehicleId: 2, driver: 'Suresh Babu', driverId: 2, from: 'Coimbatore', to: 'Hyderabad', date: '2026-01-14', distance: 620, freight: 45000, fuelCost: 17360, tollCost: 2400, otherCost: 1200, status: 'active' },
+  { id: 3, vehicle: 'TN 09 EF 9012', vehicleId: 3, driver: 'Murugan S', driverId: 3, from: 'Madurai', to: 'Chennai', date: '2026-01-13', distance: 460, freight: 32000, fuelCost: 12880, tollCost: 1800, otherCost: 600, status: 'inactive' },
+  { id: 4, vehicle: 'TN 09 IJ 7890', vehicleId: 5, driver: 'Karthik M', driverId: 5, from: 'Salem', to: 'Pune', date: '2026-01-12', distance: 1100, freight: 72000, fuelCost: 30800, tollCost: 4200, otherCost: 2000, status: 'inactive' },
+  { id: 5, vehicle: 'KA 01 MN 5678', vehicleId: 7, driver: 'Ramesh G', driverId: 7, from: 'Bangalore', to: 'Mumbai', date: '2026-01-15', distance: 980, freight: 85000, fuelCost: 39200, tollCost: 5800, otherCost: 3000, status: 'active' },
+  { id: 6, vehicle: 'MH 02 AB 3456', vehicleId: 9, driver: 'Deepak P', driverId: 9, from: 'Mumbai', to: 'Ahmedabad', date: '2026-01-14', distance: 540, freight: 42000, fuelCost: 22680, tollCost: 3200, otherCost: 1500, status: 'active' },
+  { id: 7, vehicle: 'DL 01 CD 7890', vehicleId: 10, driver: 'Amit K', driverId: 10, from: 'Delhi', to: 'Jaipur', date: '2026-01-13', distance: 280, freight: 22000, fuelCost: 10640, tollCost: 900, otherCost: 500, status: 'inactive' },
+  { id: 8, vehicle: 'GJ 01 EF 1234', vehicleId: 11, driver: 'Prakash S', driverId: 11, from: 'Ahmedabad', to: 'Mumbai', date: '2026-01-12', distance: 540, freight: 41000, fuelCost: 22680, tollCost: 3200, otherCost: 1400, status: 'inactive' },
+  { id: 9, vehicle: 'TN 09 KL 2345', vehicleId: 6, driver: 'Selvam P', driverId: 6, from: 'Erode', to: 'Chennai', date: '2026-01-11', distance: 400, freight: 30000, fuelCost: 12800, tollCost: 1500, otherCost: 700, status: 'active' },
+  { id: 10, vehicle: 'KA 02 OP 9012', vehicleId: 8, driver: 'Shankar N', driverId: 8, from: 'Mysore', to: 'Chennai', date: '2026-01-10', distance: 480, freight: 35000, fuelCost: 15360, tollCost: 1800, otherCost: 800, status: 'active' },
+  { id: 11, vehicle: 'UP 14 KL 3456', vehicleId: 14, driver: 'Rahul M', driverId: 14, from: 'Lucknow', to: 'Delhi', date: '2026-01-09', distance: 550, freight: 38000, fuelCost: 17600, tollCost: 2000, otherCost: 1000, status: 'inactive' },
+  { id: 12, vehicle: 'TN 07 MN 7890', vehicleId: 15, driver: 'Kumaravel S', driverId: 15, from: 'Trichy', to: 'Bangalore', date: '2026-01-08', distance: 450, freight: 33000, fuelCost: 14400, tollCost: 1700, otherCost: 750, status: 'active' },
+  { id: 13, vehicle: 'KA 03 OP 1234', vehicleId: 16, driver: 'Naveen K', driverId: 16, from: 'Hubli', to: 'Pune', date: '2026-01-07', distance: 620, freight: 48000, fuelCost: 24800, tollCost: 2400, otherCost: 1200, status: 'inactive' },
+  { id: 14, vehicle: 'MH 04 QR 5678', vehicleId: 17, driver: 'Santosh T', driverId: 17, from: 'Pune', to: 'Hyderabad', date: '2026-01-06', distance: 560, freight: 44000, fuelCost: 24640, tollCost: 2200, otherCost: 1100, status: 'active' },
+  { id: 15, vehicle: 'DL 02 ST 9012', vehicleId: 18, driver: 'Vikram S', driverId: 18, from: 'Noida', to: 'Jaipur', date: '2026-01-05', distance: 260, freight: 20000, fuelCost: 9880, tollCost: 850, otherCost: 450, status: 'inactive' },
+  { id: 16, vehicle: 'GJ 02 UV 3456', vehicleId: 19, driver: 'Dinesh P', driverId: 19, from: 'Surat', to: 'Mumbai', date: '2026-01-04', distance: 300, freight: 24000, fuelCost: 12000, tollCost: 1000, otherCost: 500, status: 'active' },
+  { id: 17, vehicle: 'TN 10 YZ 1234', vehicleId: 21, driver: 'Balaji M', driverId: 21, from: 'Vellore', to: 'Chennai', date: '2026-01-03', distance: 140, freight: 12000, fuelCost: 5600, tollCost: 400, otherCost: 200, status: 'inactive' },
+  { id: 18, vehicle: 'KA 05 AB 5678', vehicleId: 22, driver: 'Sreenivas R', driverId: 22, from: 'Belgaum', to: 'Bangalore', date: '2026-01-02', distance: 510, freight: 38000, fuelCost: 16320, tollCost: 1900, otherCost: 900, status: 'active' },
+  { id: 19, vehicle: 'MH 05 CD 9012', vehicleId: 23, driver: 'Manish J', driverId: 23, from: 'Nagpur', to: 'Pune', date: '2026-01-01', distance: 720, freight: 56000, fuelCost: 31680, tollCost: 2800, otherCost: 1400, status: 'inactive' },
+  { id: 20, vehicle: 'DL 03 EF 3456', vehicleId: 24, driver: 'Anil G', driverId: 24, from: 'Gurgaon', to: 'Delhi', date: '2025-12-31', distance: 30, freight: 5000, fuelCost: 1200, tollCost: 100, otherCost: 50, status: 'active' },
+  { id: 21, vehicle: 'GJ 03 GH 7890', vehicleId: 25, driver: 'Jignesh P', driverId: 25, from: 'Rajkot', to: 'Ahmedabad', date: '2025-12-30', distance: 220, freight: 18000, fuelCost: 8800, tollCost: 700, otherCost: 350, status: 'inactive' },
+  { id: 22, vehicle: 'AP 30 IJ 1234', vehicleId: 26, driver: 'Srikanth V', driverId: 26, from: 'Visakhapatnam', to: 'Hyderabad', date: '2025-12-29', distance: 620, freight: 46000, fuelCost: 24800, tollCost: 2400, otherCost: 1200, status: 'active' },
+  { id: 23, vehicle: 'TN 11 KL 5678', vehicleId: 27, driver: 'Govindaraj S', driverId: 27, from: 'Tirunelveli', to: 'Chennai', date: '2025-12-28', distance: 650, freight: 48000, fuelCost: 28600, tollCost: 2500, otherCost: 1300, status: 'inactive' },
+  { id: 24, vehicle: 'KA 06 MN 9012', vehicleId: 28, driver: 'Prashanth N', driverId: 28, from: 'Mangalore', to: 'Bangalore', date: '2025-12-27', distance: 350, freight: 28000, fuelCost: 14000, tollCost: 1200, otherCost: 600, status: 'active' },
+  { id: 25, vehicle: 'TN 09 AB 1234', vehicleId: 1, driver: 'Rajan Kumar', driverId: 1, from: 'Chennai', to: 'Hyderabad', date: '2025-12-26', distance: 620, freight: 45000, fuelCost: 21600, tollCost: 2400, otherCost: 1200, status: 'inactive' },
+  { id: 26, vehicle: 'DL 04 QR 7890', vehicleId: 30, driver: 'Rohit K', driverId: 30, from: 'Faridabad', to: 'Agra', date: '2025-12-25', distance: 180, freight: 15000, fuelCost: 7200, tollCost: 500, otherCost: 250, status: 'active' },
+  { id: 27, vehicle: 'TN 09 CD 5678', vehicleId: 2, driver: 'Suresh Babu', driverId: 2, from: 'Coimbatore', to: 'Kochi', date: '2025-12-24', distance: 180, freight: 16000, fuelCost: 6480, tollCost: 800, otherCost: 400, status: 'inactive' },
+  { id: 28, vehicle: 'KA 01 MN 5678', vehicleId: 7, driver: 'Ramesh G', driverId: 7, from: 'Bangalore', to: 'Chennai', date: '2025-12-23', distance: 350, freight: 28000, fuelCost: 14000, tollCost: 1200, otherCost: 600, status: 'active' },
+  { id: 29, vehicle: 'MH 02 AB 3456', vehicleId: 9, driver: 'Deepak P', driverId: 9, from: 'Mumbai', to: 'Pune', date: '2025-12-22', distance: 150, freight: 12000, fuelCost: 6000, tollCost: 600, otherCost: 300, status: 'inactive' },
+  { id: 30, vehicle: 'GJ 01 EF 1234', vehicleId: 11, driver: 'Prakash S', driverId: 11, from: 'Ahmedabad', to: 'Surat', date: '2025-12-21', distance: 265, freight: 21000, fuelCost: 10560, tollCost: 900, otherCost: 450, status: 'active' },
+];
+
+// Initial Data - 30 Maintenance Records
+const initialMaintenance: MaintenanceRecord[] = [
+  { id: 1, vehicle: 'TN 09 AB 1234', vehicleId: 1, date: '2025-12-10', work: 'Engine oil change, Filter replacement', vendor: 'Sri Murugan Auto Works', cost: 8500, gst: 1530, status: 'approved', nextKm: 50500 },
+  { id: 2, vehicle: 'TN 09 CD 5678', vehicleId: 2, date: '2025-11-05', work: 'Brake pad replacement, Wheel alignment', vendor: 'Vel Auto Service', cost: 15200, gst: 2736, status: 'approved', nextKm: 65000 },
+  { id: 3, vehicle: 'TN 09 EF 9012', vehicleId: 3, date: '2026-01-02', work: 'AC service, Coolant flush', vendor: 'Ganesh Motors', cost: 6800, gst: 1224, status: 'pending', nextKm: 35000 },
+  { id: 4, vehicle: 'TN 09 GH 3456', vehicleId: 4, date: '2025-09-15', work: 'Major service - 75,000 KM', vendor: 'Tata Authorized Service', cost: 32000, gst: 5760, status: 'approved', nextKm: 80000 },
+  { id: 5, vehicle: 'TN 09 IJ 7890', vehicleId: 5, date: '2025-12-28', work: 'Tyre rotation, Battery check', vendor: 'Quick Fix Auto', cost: 3200, gst: 576, status: 'approved', nextKm: 25000 },
+  { id: 6, vehicle: 'TN 09 KL 2345', vehicleId: 6, date: '2025-12-20', work: 'Gearbox oil change', vendor: 'Mahindra Authorized Service', cost: 12500, gst: 2250, status: 'approved', nextKm: 45000 },
+  { id: 7, vehicle: 'KA 01 MN 5678', vehicleId: 7, date: '2026-01-05', work: 'Suspension repair, Shock absorber replacement', vendor: 'Volvo Trucks India', cost: 45000, gst: 8100, status: 'pending', nextKm: 92000 },
+  { id: 8, vehicle: 'KA 02 OP 9012', vehicleId: 8, date: '2025-12-15', work: 'Engine tune-up, Injector cleaning', vendor: 'Scania Service Center', cost: 28000, gst: 5040, status: 'approved', nextKm: 60000 },
+  { id: 9, vehicle: 'MH 02 AB 3456', vehicleId: 9, date: '2025-11-28', work: 'Clutch replacement, Flywheel resurfacing', vendor: 'MAN Trucks India', cost: 52000, gst: 9360, status: 'approved', nextKm: 75000 },
+  { id: 10, vehicle: 'DL 01 CD 7890', vehicleId: 10, date: '2026-01-08', work: 'Regular service - 35,000 KM', vendor: 'Tata Authorized Service', cost: 18500, gst: 3330, status: 'pending', nextKm: 38000 },
+  { id: 11, vehicle: 'GJ 01 EF 1234', vehicleId: 11, date: '2025-12-25', work: 'Differential overhaul', vendor: 'Ashok Leyland Service', cost: 35000, gst: 6300, status: 'approved', nextKm: 70000 },
+  { id: 12, vehicle: 'AP 28 GH 5678', vehicleId: 12, date: '2026-01-10', work: 'Brake system overhaul', vendor: 'Eicher Pro Service', cost: 22000, gst: 3960, status: 'pending', nextKm: 32000 },
+  { id: 13, vehicle: 'WB 23 IJ 9012', vehicleId: 13, date: '2025-10-05', work: 'Engine rebuild', vendor: 'Tata Trucks Service', cost: 185000, gst: 33300, status: 'approved', nextKm: 96000 },
+  { id: 14, vehicle: 'UP 14 KL 3456', vehicleId: 14, date: '2025-12-18', work: 'Transmission repair', vendor: 'BharatBenz Service', cost: 42000, gst: 7560, status: 'approved', nextKm: 55000 },
+  { id: 15, vehicle: 'TN 07 MN 7890', vehicleId: 15, date: '2025-12-30', work: 'Air brake system check', vendor: 'Mahindra Commercial', cost: 8500, gst: 1530, status: 'approved', nextKm: 42000 },
+  { id: 16, vehicle: 'KA 03 OP 1234', vehicleId: 16, date: '2026-01-12', work: 'Radiator replacement, Coolant flush', vendor: 'Volvo Trucks India', cost: 38000, gst: 6840, status: 'pending', nextKm: 105000 },
+  { id: 17, vehicle: 'MH 04 QR 5678', vehicleId: 17, date: '2025-12-22', work: 'Exhaust system repair', vendor: 'Scania Service Center', cost: 18000, gst: 3240, status: 'approved', nextKm: 85000 },
+  { id: 18, vehicle: 'DL 02 ST 9012', vehicleId: 18, date: '2026-01-06', work: 'Engine oil change, Air filter replacement', vendor: 'MAN Trucks Service', cost: 14000, gst: 2520, status: 'pending', nextKm: 44000 },
+  { id: 19, vehicle: 'GJ 02 UV 3456', vehicleId: 19, date: '2025-12-08', work: 'Steering box repair', vendor: 'Ashok Leyland Service', cost: 19500, gst: 3510, status: 'approved', nextKm: 63000 },
+  { id: 20, vehicle: 'AP 29 WX 7890', vehicleId: 20, date: '2025-11-12', work: 'Complete brake system replacement', vendor: 'Eicher Service Center', cost: 28500, gst: 5130, status: 'approved', nextKm: 90000 },
+  { id: 21, vehicle: 'TN 10 YZ 1234', vehicleId: 21, date: '2025-12-02', work: 'Fuel pump replacement', vendor: 'Tata Authorized Service', cost: 32000, gst: 5760, status: 'approved', nextKm: 65000 },
+  { id: 22, vehicle: 'KA 05 AB 5678', vehicleId: 22, date: '2026-01-03', work: 'Power steering fluid change', vendor: 'BharatBenz Service', cost: 7500, gst: 1350, status: 'pending', nextKm: 37000 },
+  { id: 23, vehicle: 'MH 05 CD 9012', vehicleId: 23, date: '2025-12-14', work: 'Electrical system check', vendor: 'Ashok Leyland Service', cost: 9500, gst: 1710, status: 'approved', nextKm: 52000 },
+  { id: 24, vehicle: 'DL 03 EF 3456', vehicleId: 24, date: '2026-01-09', work: 'Wheel alignment, Balancing', vendor: 'Tata Service Center', cost: 5500, gst: 990, status: 'pending', nextKm: 29000 },
+  { id: 25, vehicle: 'GJ 03 GH 7890', vehicleId: 25, date: '2025-12-26', work: 'Alternator replacement', vendor: 'Mahindra Commercial', cost: 18000, gst: 3240, status: 'approved', nextKm: 37000 },
+  { id: 26, vehicle: 'AP 30 IJ 1234', vehicleId: 26, date: '2026-01-11', work: 'First service - 20,000 KM', vendor: 'Eicher Pro Service', cost: 12000, gst: 2160, status: 'pending', nextKm: 22000 },
+  { id: 27, vehicle: 'TN 11 KL 5678', vehicleId: 27, date: '2025-11-30', work: 'Clutch plate replacement', vendor: 'Ashok Leyland Service', cost: 28000, gst: 5040, status: 'approved', nextKm: 77000 },
+  { id: 28, vehicle: 'KA 06 MN 9012', vehicleId: 28, date: '2025-12-19', work: 'Engine overhaul', vendor: 'Volvo Trucks India', cost: 95000, gst: 17100, status: 'approved', nextKm: 65000 },
+  { id: 29, vehicle: 'MH 06 OP 3456', vehicleId: 29, date: '2025-10-20', work: 'Crankshaft replacement', vendor: 'Scania Service Center', cost: 125000, gst: 22500, status: 'approved', nextKm: 98000 },
+  { id: 30, vehicle: 'DL 04 QR 7890', vehicleId: 30, date: '2026-01-04', work: 'Turbocharger repair', vendor: 'MAN Trucks Service', cost: 35000, gst: 6300, status: 'pending', nextKm: 47000 },
+];
+
+// Initial Data - 30 FASTag
+const initialFASTags: FASTag[] = [
+  { id: 1, fastagId: 'FT-TN-001', vehicle: 'TN 09 AB 1234', vehicleId: 1, driver: 'Rajan Kumar', driverId: 1, balance: 2450, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 4200, bank: 'HDFC Bank' },
+  { id: 2, fastagId: 'FT-TN-002', vehicle: 'TN 09 CD 5678', vehicleId: 2, driver: 'Suresh Babu', driverId: 2, balance: 380, threshold: 500, status: 'warning', lastToll: '2026-01-14', monthlyToll: 3800, bank: 'ICICI Bank' },
+  { id: 3, fastagId: 'FT-TN-003', vehicle: 'TN 09 EF 9012', vehicleId: 3, driver: 'Murugan S', driverId: 3, balance: 1820, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 2900, bank: 'SBI' },
+  { id: 4, fastagId: 'FT-TN-004', vehicle: 'TN 09 GH 3456', vehicleId: 4, driver: 'Vijay R', driverId: 4, balance: 120, threshold: 500, status: 'critical', lastToll: '2025-12-20', monthlyToll: 1200, bank: 'Axis Bank' },
+  { id: 5, fastagId: 'FT-TN-005', vehicle: 'TN 09 IJ 7890', vehicleId: 5, driver: 'Karthik M', driverId: 5, balance: 3100, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 5100, bank: 'HDFC Bank' },
+  { id: 6, fastagId: 'FT-TN-006', vehicle: 'TN 09 KL 2345', vehicleId: 6, driver: 'Selvam P', driverId: 6, balance: 650, threshold: 500, status: 'ok', lastToll: '2026-01-12', monthlyToll: 3400, bank: 'Kotak Bank' },
+  { id: 7, fastagId: 'FT-KA-001', vehicle: 'KA 01 MN 5678', vehicleId: 7, driver: 'Ramesh G', driverId: 7, balance: 5200, threshold: 1000, status: 'ok', lastToll: '2026-01-15', monthlyToll: 6800, bank: 'HDFC Bank' },
+  { id: 8, fastagId: 'FT-KA-002', vehicle: 'KA 02 OP 9012', vehicleId: 8, driver: 'Shankar N', driverId: 8, balance: 890, threshold: 500, status: 'ok', lastToll: '2026-01-14', monthlyToll: 4200, bank: 'ICICI Bank' },
+  { id: 9, fastagId: 'FT-MH-001', vehicle: 'MH 02 AB 3456', vehicleId: 9, driver: 'Deepak P', driverId: 9, balance: 420, threshold: 500, status: 'warning', lastToll: '2026-01-14', monthlyToll: 5600, bank: 'SBI' },
+  { id: 10, fastagId: 'FT-DL-001', vehicle: 'DL 01 CD 7890', vehicleId: 10, driver: 'Amit K', driverId: 10, balance: 1850, threshold: 500, status: 'ok', lastToll: '2026-01-13', monthlyToll: 1800, bank: 'Axis Bank' },
+  { id: 11, fastagId: 'FT-GJ-001', vehicle: 'GJ 01 EF 1234', vehicleId: 11, driver: 'Prakash S', driverId: 11, balance: 750, threshold: 500, status: 'ok', lastToll: '2026-01-12', monthlyToll: 4900, bank: 'Kotak Bank' },
+  { id: 12, fastagId: 'FT-AP-001', vehicle: 'AP 28 GH 5678', vehicleId: 12, driver: 'Krishna R', driverId: 12, balance: 2340, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 3200, bank: 'HDFC Bank' },
+  { id: 13, fastagId: 'FT-WB-001', vehicle: 'WB 23 IJ 9012', vehicleId: 13, driver: 'Sunil D', driverId: 13, balance: 85, threshold: 500, status: 'critical', lastToll: '2025-12-15', monthlyToll: 1500, bank: 'ICICI Bank' },
+  { id: 14, fastagId: 'FT-UP-001', vehicle: 'UP 14 KL 3456', vehicleId: 14, driver: 'Rahul M', driverId: 14, balance: 1650, threshold: 500, status: 'ok', lastToll: '2026-01-13', monthlyToll: 3800, bank: 'SBI' },
+  { id: 15, fastagId: 'FT-TN-007', vehicle: 'TN 07 MN 7890', vehicleId: 15, driver: 'Kumaravel S', driverId: 15, balance: 980, threshold: 500, status: 'ok', lastToll: '2026-01-14', monthlyToll: 4100, bank: 'Axis Bank' },
+  { id: 16, fastagId: 'FT-KA-003', vehicle: 'KA 03 OP 1234', vehicleId: 16, driver: 'Naveen K', driverId: 16, balance: 3400, threshold: 1000, status: 'ok', lastToll: '2026-01-15', monthlyToll: 7200, bank: 'HDFC Bank' },
+  { id: 17, fastagId: 'FT-MH-002', vehicle: 'MH 04 QR 5678', vehicleId: 17, driver: 'Santosh T', driverId: 17, balance: 520, threshold: 500, status: 'ok', lastToll: '2026-01-14', monthlyToll: 5400, bank: 'Kotak Bank' },
+  { id: 18, fastagId: 'FT-DL-002', vehicle: 'DL 02 ST 9012', vehicleId: 18, driver: 'Vikram S', driverId: 18, balance: 1420, threshold: 500, status: 'ok', lastToll: '2026-01-13', monthlyToll: 2100, bank: 'ICICI Bank' },
+  { id: 19, fastagId: 'FT-GJ-002', vehicle: 'GJ 02 UV 3456', vehicleId: 19, driver: 'Dinesh P', driverId: 19, balance: 640, threshold: 500, status: 'ok', lastToll: '2026-01-12', monthlyToll: 3600, bank: 'SBI' },
+  { id: 20, fastagId: 'FT-AP-002', vehicle: 'AP 29 WX 7890', vehicleId: 20, driver: 'Ravi K', driverId: 20, balance: 180, threshold: 500, status: 'critical', lastToll: '2025-12-18', monthlyToll: 1900, bank: 'Axis Bank' },
+  { id: 21, fastagId: 'FT-TN-008', vehicle: 'TN 10 YZ 1234', vehicleId: 21, driver: 'Balaji M', driverId: 21, balance: 2150, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 4300, bank: 'HDFC Bank' },
+  { id: 22, fastagId: 'FT-KA-004', vehicle: 'KA 05 AB 5678', vehicleId: 22, driver: 'Sreenivas R', driverId: 22, balance: 780, threshold: 500, status: 'ok', lastToll: '2026-01-14', monthlyToll: 2800, bank: 'ICICI Bank' },
+  { id: 23, fastagId: 'FT-MH-003', vehicle: 'MH 05 CD 9012', vehicleId: 23, driver: 'Manish J', driverId: 23, balance: 430, threshold: 500, status: 'warning', lastToll: '2026-01-13', monthlyToll: 3900, bank: 'Kotak Bank' },
+  { id: 24, fastagId: 'FT-DL-003', vehicle: 'DL 03 EF 3456', vehicleId: 24, driver: 'Anil G', driverId: 24, balance: 2850, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 2200, bank: 'SBI' },
+  { id: 25, fastagId: 'FT-GJ-003', vehicle: 'GJ 03 GH 7890', vehicleId: 25, driver: 'Jignesh P', driverId: 25, balance: 920, threshold: 500, status: 'ok', lastToll: '2026-01-14', monthlyToll: 3400, bank: 'HDFC Bank' },
+  { id: 26, fastagId: 'FT-AP-003', vehicle: 'AP 30 IJ 1234', vehicleId: 26, driver: 'Srikanth V', driverId: 26, balance: 1680, threshold: 500, status: 'ok', lastToll: '2026-01-15', monthlyToll: 2600, bank: 'ICICI Bank' },
+  { id: 27, fastagId: 'FT-TN-009', vehicle: 'TN 11 KL 5678', vehicleId: 27, driver: 'Govindaraj S', driverId: 27, balance: 340, threshold: 500, status: 'warning', lastToll: '2026-01-12', monthlyToll: 5200, bank: 'Axis Bank' },
+  { id: 28, fastagId: 'FT-KA-005', vehicle: 'KA 06 MN 9012', vehicleId: 28, driver: 'Prashanth N', driverId: 28, balance: 1950, threshold: 500, status: 'ok', lastToll: '2026-01-13', monthlyToll: 4600, bank: 'Kotak Bank' },
+  { id: 29, fastagId: 'FT-MH-004', vehicle: 'MH 06 OP 3456', vehicleId: 29, driver: 'Mukesh T', driverId: 29, balance: 95, threshold: 500, status: 'critical', lastToll: '2025-12-22', monthlyToll: 1700, bank: 'SBI' },
+  { id: 30, fastagId: 'FT-DL-004', vehicle: 'DL 04 QR 7890', vehicleId: 30, driver: 'Rohit K', driverId: 30, balance: 2680, threshold: 500, status: 'ok', lastToll: '2026-01-14', monthlyToll: 3900, bank: 'HDFC Bank' },
+];
+
+// Initial Data - 30 Tyres
+const initialTyres: Tyre[] = [
+  { id: 1, vehicle: 'TN 09 AB 1234', vehicleId: 1, tyreNo: 'TYR-001', position: 'Front LHS', size: '295/80 R22.5', brand: 'MRF', changeDate: '2025-08-10', changeKm: 42000, currentKm: 48320, cost: 18500, mileage: 80000, cpkm: 0.23 },
+  { id: 2, vehicle: 'TN 09 AB 1234', vehicleId: 1, tyreNo: 'TYR-002', position: 'Front RHS', size: '295/80 R22.5', brand: 'MRF', changeDate: '2025-08-10', changeKm: 42000, currentKm: 48320, cost: 18500, mileage: 80000, cpkm: 0.23 },
+  { id: 3, vehicle: 'TN 09 AB 1234', vehicleId: 1, tyreNo: 'TYR-003', position: 'Axle LHS Inner', size: '295/80 R22.5', brand: 'Apollo', changeDate: '2025-06-15', changeKm: 38000, currentKm: 48320, cost: 17200, mileage: 80000, cpkm: 0.22 },
+  { id: 4, vehicle: 'TN 09 AB 1234', vehicleId: 1, tyreNo: 'TYR-004', position: 'Axle LHS Outer', size: '295/80 R22.5', brand: 'Apollo', changeDate: '2025-06-15', changeKm: 38000, currentKm: 48320, cost: 17200, mileage: 80000, cpkm: 0.22 },
+  { id: 5, vehicle: 'TN 09 AB 1234', vehicleId: 1, tyreNo: 'TYR-005', position: 'Axle RHS Inner', size: '295/80 R22.5', brand: 'CEAT', changeDate: '2025-04-20', changeKm: 34000, currentKm: 48320, cost: 16800, mileage: 80000, cpkm: 0.21 },
+  { id: 6, vehicle: 'TN 09 AB 1234', vehicleId: 1, tyreNo: 'TYR-006', position: 'Axle RHS Outer', size: '295/80 R22.5', brand: 'CEAT', changeDate: '2025-04-20', changeKm: 34000, currentKm: 48320, cost: 16800, mileage: 80000, cpkm: 0.21 },
+  { id: 7, vehicle: 'TN 09 CD 5678', vehicleId: 2, tyreNo: 'TYR-007', position: 'Front LHS', size: '295/80 R22.5', brand: 'CEAT', changeDate: '2025-09-20', changeKm: 55000, currentKm: 62150, cost: 16800, mileage: 80000, cpkm: 0.21 },
+  { id: 8, vehicle: 'TN 09 CD 5678', vehicleId: 2, tyreNo: 'TYR-008', position: 'Front RHS', size: '295/80 R22.5', brand: 'CEAT', changeDate: '2025-09-20', changeKm: 55000, currentKm: 62150, cost: 16800, mileage: 80000, cpkm: 0.21 },
+  { id: 9, vehicle: 'TN 09 CD 5678', vehicleId: 2, tyreNo: 'TYR-009', position: 'Axle LHS Inner', size: '295/80 R22.5', brand: 'JK', changeDate: '2025-07-10', changeKm: 51000, currentKm: 62150, cost: 15500, mileage: 75000, cpkm: 0.21 },
+  { id: 10, vehicle: 'TN 09 CD 5678', vehicleId: 2, tyreNo: 'TYR-010', position: 'Axle LHS Outer', size: '295/80 R22.5', brand: 'JK', changeDate: '2025-07-10', changeKm: 51000, currentKm: 62150, cost: 15500, mileage: 75000, cpkm: 0.21 },
+  { id: 11, vehicle: 'TN 09 CD 5678', vehicleId: 2, tyreNo: 'TYR-011', position: 'Axle RHS Inner', size: '295/80 R22.5', brand: 'Bridgestone', changeDate: '2025-05-15', changeKm: 48000, currentKm: 62150, cost: 19500, mileage: 90000, cpkm: 0.22 },
+  { id: 12, vehicle: 'TN 09 CD 5678', vehicleId: 2, tyreNo: 'TYR-012', position: 'Axle RHS Outer', size: '295/80 R22.5', brand: 'Bridgestone', changeDate: '2025-05-15', changeKm: 48000, currentKm: 62150, cost: 19500, mileage: 90000, cpkm: 0.22 },
+  { id: 13, vehicle: 'TN 09 EF 9012', vehicleId: 3, tyreNo: 'TYR-013', position: 'Front LHS', size: '295/80 R22.5', brand: 'Bridgestone', changeDate: '2025-11-05', changeKm: 25000, currentKm: 31200, cost: 22000, mileage: 100000, cpkm: 0.22 },
+  { id: 14, vehicle: 'TN 09 EF 9012', vehicleId: 3, tyreNo: 'TYR-014', position: 'Front RHS', size: '295/80 R22.5', brand: 'Bridgestone', changeDate: '2025-11-05', changeKm: 25000, currentKm: 31200, cost: 22000, mileage: 100000, cpkm: 0.22 },
+  { id: 15, vehicle: 'TN 09 EF 9012', vehicleId: 3, tyreNo: 'TYR-015', position: 'Axle LHS Inner', size: '10.00R20', brand: 'Michelin', changeDate: '2025-09-12', changeKm: 22000, currentKm: 31200, cost: 24500, mileage: 120000, cpkm: 0.20 },
+  { id: 16, vehicle: 'TN 09 EF 9012', vehicleId: 3, tyreNo: 'TYR-016', position: 'Axle LHS Outer', size: '10.00R20', brand: 'Michelin', changeDate: '2025-09-12', changeKm: 22000, currentKm: 31200, cost: 24500, mileage: 120000, cpkm: 0.20 },
+  { id: 17, vehicle: 'KA 01 MN 5678', vehicleId: 7, tyreNo: 'TYR-017', position: 'Front LHS', size: '315/80 R22.5', brand: 'MRF', changeDate: '2025-07-20', changeKm: 75000, currentKm: 89450, cost: 21500, mileage: 90000, cpkm: 0.24 },
+  { id: 18, vehicle: 'KA 01 MN 5678', vehicleId: 7, tyreNo: 'TYR-018', position: 'Front RHS', size: '315/80 R22.5', brand: 'MRF', changeDate: '2025-07-20', changeKm: 75000, currentKm: 89450, cost: 21500, mileage: 90000, cpkm: 0.24 },
+  { id: 19, vehicle: 'KA 01 MN 5678', vehicleId: 7, tyreNo: 'TYR-019', position: 'Axle LHS Inner', size: '315/80 R22.5', brand: 'Apollo', changeDate: '2025-05-10', changeKm: 72000, currentKm: 89450, cost: 19800, mileage: 85000, cpkm: 0.23 },
+  { id: 20, vehicle: 'KA 01 MN 5678', vehicleId: 7, tyreNo: 'TYR-020', position: 'Axle LHS Outer', size: '315/80 R22.5', brand: 'Apollo', changeDate: '2025-05-10', changeKm: 72000, currentKm: 89450, cost: 19800, mileage: 85000, cpkm: 0.23 },
+  { id: 21, vehicle: 'MH 02 AB 3456', vehicleId: 9, tyreNo: 'TYR-021', position: 'Front LHS', size: '295/80 R22.5', brand: 'CEAT', changeDate: '2025-08-15', changeKm: 62000, currentKm: 72340, cost: 17800, mileage: 85000, cpkm: 0.21 },
+  { id: 22, vehicle: 'MH 02 AB 3456', vehicleId: 9, tyreNo: 'TYR-022', position: 'Front RHS', size: '295/80 R22.5', brand: 'CEAT', changeDate: '2025-08-15', changeKm: 62000, currentKm: 72340, cost: 17800, mileage: 85000, cpkm: 0.21 },
+  { id: 23, vehicle: 'MH 02 AB 3456', vehicleId: 9, tyreNo: 'TYR-023', position: 'Axle LHS Inner', size: '295/80 R22.5', brand: 'JK', changeDate: '2025-06-05', changeKm: 58000, currentKm: 72340, cost: 16200, mileage: 80000, cpkm: 0.20 },
+  { id: 24, vehicle: 'MH 02 AB 3456', vehicleId: 9, tyreNo: 'TYR-024', position: 'Axle LHS Outer', size: '295/80 R22.5', brand: 'JK', changeDate: '2025-06-05', changeKm: 58000, currentKm: 72340, cost: 16200, mileage: 80000, cpkm: 0.20 },
+  { id: 25, vehicle: 'DL 01 CD 7890', vehicleId: 10, tyreNo: 'TYR-025', position: 'Front LHS', size: '295/80 R22.5', brand: 'Bridgestone', changeDate: '2025-10-25', changeKm: 30000, currentKm: 35600, cost: 20500, mileage: 95000, cpkm: 0.22 },
+  { id: 26, vehicle: 'DL 01 CD 7890', vehicleId: 10, tyreNo: 'TYR-026', position: 'Front RHS', size: '295/80 R22.5', brand: 'Bridgestone', changeDate: '2025-10-25', changeKm: 30000, currentKm: 35600, cost: 20500, mileage: 95000, cpkm: 0.22 },
+  { id: 27, vehicle: 'DL 01 CD 7890', vehicleId: 10, tyreNo: 'TYR-027', position: 'Axle LHS Inner', size: '295/80 R22.5', brand: 'Michelin', changeDate: '2025-08-18', changeKm: 27000, currentKm: 35600, cost: 22800, mileage: 110000, cpkm: 0.21 },
+  { id: 28, vehicle: 'DL 01 CD 7890', vehicleId: 10, tyreNo: 'TYR-028', position: 'Axle LHS Outer', size: '295/80 R22.5', brand: 'Michelin', changeDate: '2025-08-18', changeKm: 27000, currentKm: 35600, cost: 22800, mileage: 110000, cpkm: 0.21 },
+  { id: 29, vehicle: 'TN 09 KL 2345', vehicleId: 6, tyreNo: 'TYR-029', position: 'Front LHS', size: '295/80 R22.5', brand: 'MRF', changeDate: '2025-09-28', changeKm: 35000, currentKm: 41800, cost: 18900, mileage: 85000, cpkm: 0.22 },
+  { id: 30, vehicle: 'TN 09 KL 2345', vehicleId: 6, tyreNo: 'TYR-030', position: 'Front RHS', size: '295/80 R22.5', brand: 'MRF', changeDate: '2025-09-28', changeKm: 35000, currentKm: 41800, cost: 18900, mileage: 85000, cpkm: 0.22 },
+];
+
+// Initial Data - 30 Alerts
+const initialAlerts: Alert[] = [
+  { id: 1, type: 'critical', msg: 'TN 09 GH 3456 — FASTag balance critically low (₹120)', time: '1h ago', read: false },
+  { id: 2, type: 'warning', msg: 'TN 09 CD 5678 — FASTag balance below threshold (₹380)', time: '2h ago', read: false },
+  { id: 3, type: 'warning', msg: 'MH 02 AB 3456 — FASTag balance below threshold (₹420)', time: '3h ago', read: false },
+  { id: 4, type: 'critical', msg: 'WB 23 IJ 9012 — FASTag balance critically low (₹85)', time: '4h ago', read: false },
+  { id: 5, type: 'critical', msg: 'AP 29 WX 7890 — FASTag balance critically low (₹180)', time: '5h ago', read: false },
+  { id: 6, type: 'warning', msg: 'TN 11 KL 5678 — FASTag balance below threshold (₹340)', time: '6h ago', read: false },
+  { id: 7, type: 'warning', msg: 'MH 05 CD 9012 — FASTag balance below threshold (₹430)', time: '7h ago', read: false },
+  { id: 8, type: 'critical', msg: 'MH 06 OP 3456 — FASTag balance critically low (₹95)', time: '8h ago', read: false },
+  { id: 9, type: 'info', msg: 'TN 09 EF 9012 — Service pending approval (₹6,800)', time: '12h ago', read: false },
+  { id: 10, type: 'info', msg: 'KA 01 MN 5678 — Service pending approval (₹45,000)', time: '14h ago', read: false },
+  { id: 11, type: 'info', msg: 'DL 01 CD 7890 — Service pending approval (₹18,500)', time: '16h ago', read: false },
+  { id: 12, type: 'info', msg: 'AP 28 GH 5678 — Service pending approval (₹22,000)', time: '18h ago', read: false },
+  { id: 13, type: 'info', msg: 'KA 03 OP 1234 — Service pending approval (₹38,000)', time: '20h ago', read: false },
+  { id: 14, type: 'info', msg: 'DL 02 ST 9012 — Service pending approval (₹14,000)', time: '22h ago', read: false },
+  { id: 15, type: 'info', msg: 'KA 05 AB 5678 — Service pending approval (₹7,500)', time: '1d ago', read: false },
+  { id: 16, type: 'info', msg: 'DL 03 EF 3456 — Service pending approval (₹5,500)', time: '1d ago', read: false },
+  { id: 17, type: 'info', msg: 'AP 30 IJ 1234 — Service pending approval (₹12,000)', time: '1d ago', read: false },
+  { id: 18, type: 'info', msg: 'DL 04 QR 7890 — Service pending approval (₹35,000)', time: '2d ago', read: false },
+  { id: 19, type: 'warning', msg: 'Vehicle 6 — Overdue for service (41,800 KM vs 45,000 KM)', time: '2d ago', read: true },
+  { id: 20, type: 'warning', msg: 'Vehicle 14 — Service due soon (51,230 KM vs 55,000 KM)', time: '3d ago', read: true },
+  { id: 21, type: 'warning', msg: 'Vehicle 15 — Service due soon (39,870 KM vs 42,000 KM)', time: '3d ago', read: true },
+  { id: 22, type: 'warning', msg: 'Vehicle 21 — Service due soon (62,340 KM vs 65,000 KM)', time: '4d ago', read: true },
+  { id: 23, type: 'warning', msg: 'Vehicle 23 — Service due soon (48,920 KM vs 52,000 KM)', time: '4d ago', read: true },
+  { id: 24, type: 'info', msg: 'Driver Rajan Kumar — Completed 342 trips, 4.9 KMPL efficiency', time: '5d ago', read: true },
+  { id: 25, type: 'info', msg: 'Driver Naveen K — Achieved 4.8 KMPL efficiency', time: '5d ago', read: true },
+  { id: 26, type: 'warning', msg: 'Driver Vijay R — 3 violations recorded this month', time: '7d ago', read: true },
+  { id: 27, type: 'warning', msg: 'Driver Ravi K — 3 violations recorded this month', time: '7d ago', read: true },
+  { id: 28, type: 'warning', msg: 'Driver Mukesh T — 3 violations recorded this month', time: '7d ago', read: true },
+  { id: 29, type: 'info', msg: 'Fleet average fuel efficiency: 4.7 KMPL', time: '10d ago', read: true },
+  { id: 30, type: 'info', msg: 'Monthly fuel consumption: 2,145 liters across 30 vehicles', time: '15d ago', read: true },
+];
+
+// Initial Data - 30 Inventory Items
+const initialInventory: InventoryItem[] = [
+  { id: 1, name: 'Engine Oil 15W40', category: 'Lubricants', quantity: 45, unit: 'L', minStock: 20, location: 'Warehouse A', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 2, name: 'Brake Pads - Front', category: 'Brakes', quantity: 8, unit: 'sets', minStock: 10, location: 'Warehouse B', lastUpdated: '2026-01-14', status: 'low' },
+  { id: 3, name: 'Air Filter - Heavy', category: 'Filters', quantity: 25, unit: 'pcs', minStock: 15, location: 'Warehouse A', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 4, name: 'Coolant - Red', category: 'Fluids', quantity: 3, unit: 'L', minStock: 10, location: 'Warehouse A', lastUpdated: '2026-01-13', status: 'critical' },
+  { id: 5, name: 'Tyre Tubes - 295/80', category: 'Tyres', quantity: 12, unit: 'pcs', minStock: 8, location: 'Warehouse C', lastUpdated: '2026-01-12', status: 'ok' },
+  { id: 6, name: 'Headlight Bulbs - H4', category: 'Electrical', quantity: 18, unit: 'pcs', minStock: 10, location: 'Warehouse B', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 7, name: 'Wiper Blades - 24"', category: 'Accessories', quantity: 6, unit: 'sets', minStock: 10, location: 'Warehouse B', lastUpdated: '2026-01-10', status: 'low' },
+  { id: 8, name: 'Transmission Oil', category: 'Lubricants', quantity: 30, unit: 'L', minStock: 15, location: 'Warehouse A', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 9, name: 'Brake Pads - Rear', category: 'Brakes', quantity: 15, unit: 'sets', minStock: 12, location: 'Warehouse B', lastUpdated: '2026-01-14', status: 'ok' },
+  { id: 10, name: 'Oil Filter - Primary', category: 'Filters', quantity: 32, unit: 'pcs', minStock: 20, location: 'Warehouse A', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 11, name: 'Diesel Filter', category: 'Filters', quantity: 18, unit: 'pcs', minStock: 15, location: 'Warehouse A', lastUpdated: '2026-01-13', status: 'ok' },
+  { id: 12, name: 'Brake Fluid DOT4', category: 'Fluids', quantity: 8, unit: 'L', minStock: 10, location: 'Warehouse A', lastUpdated: '2026-01-12', status: 'low' },
+  { id: 13, name: 'Power Steering Oil', category: 'Fluids', quantity: 22, unit: 'L', minStock: 12, location: 'Warehouse A', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 14, name: 'Tyre - 295/80 R22.5', category: 'Tyres', quantity: 4, unit: 'pcs', minStock: 6, location: 'Warehouse C', lastUpdated: '2026-01-14', status: 'low' },
+  { id: 15, name: 'Battery - 12V 180Ah', category: 'Electrical', quantity: 3, unit: 'pcs', minStock: 5, location: 'Warehouse B', lastUpdated: '2026-01-10', status: 'critical' },
+  { id: 16, name: 'Alternator - 24V', category: 'Electrical', quantity: 2, unit: 'pcs', minStock: 3, location: 'Warehouse B', lastUpdated: '2026-01-08', status: 'low' },
+  { id: 17, name: 'Starter Motor', category: 'Electrical', quantity: 2, unit: 'pcs', minStock: 3, location: 'Warehouse B', lastUpdated: '2026-01-05', status: 'low' },
+  { id: 18, name: 'Side Mirror - LHS', category: 'Accessories', quantity: 8, unit: 'pcs', minStock: 10, location: 'Warehouse B', lastUpdated: '2026-01-15', status: 'low' },
+  { id: 19, name: 'Side Mirror - RHS', category: 'Accessories', quantity: 7, unit: 'pcs', minStock: 10, location: 'Warehouse B', lastUpdated: '2026-01-14', status: 'low' },
+  { id: 20, name: 'Wheel Nuts - M24', category: 'Parts', quantity: 150, unit: 'pcs', minStock: 100, location: 'Warehouse C', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 21, name: 'Gear Oil 80W90', category: 'Lubricants', quantity: 28, unit: 'L', minStock: 15, location: 'Warehouse A', lastUpdated: '2026-01-13', status: 'ok' },
+  { id: 22, name: 'Clutch Plate - 430mm', category: 'Parts', quantity: 4, unit: 'pcs', minStock: 6, location: 'Warehouse C', lastUpdated: '2026-01-12', status: 'low' },
+  { id: 23, name: 'Brake Linings', category: 'Brakes', quantity: 20, unit: 'sets', minStock: 15, location: 'Warehouse B', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 24, name: 'Radiator Hose', category: 'Parts', quantity: 6, unit: 'pcs', minStock: 8, location: 'Warehouse C', lastUpdated: '2026-01-10', status: 'low' },
+  { id: 25, name: 'Fuel Filter', category: 'Filters', quantity: 22, unit: 'pcs', minStock: 18, location: 'Warehouse A', lastUpdated: '2026-01-14', status: 'ok' },
+  { id: 26, name: 'Hydraulic Oil', category: 'Fluids', quantity: 35, unit: 'L', minStock: 20, location: 'Warehouse A', lastUpdated: '2026-01-15', status: 'ok' },
+  { id: 27, name: 'Tail Light Assembly', category: 'Electrical', quantity: 5, unit: 'pcs', minStock: 8, location: 'Warehouse B', lastUpdated: '2026-01-08', status: 'low' },
+  { id: 28, name: 'Indicator Light', category: 'Electrical', quantity: 12, unit: 'pcs', minStock: 15, location: 'Warehouse B', lastUpdated: '2026-01-15', status: 'low' },
+  { id: 29, name: 'Seat Belt', category: 'Accessories', quantity: 15, unit: 'pcs', minStock: 20, location: 'Warehouse B', lastUpdated: '2026-01-12', status: 'low' },
+  { id: 30, name: 'Engine Gasket Set', category: 'Parts', quantity: 3, unit: 'sets', minStock: 5, location: 'Warehouse C', lastUpdated: '2026-01-06', status: 'low' },
+];
+
+interface FleetStore {
+  vehicles: Vehicle[];
+  drivers: Driver[];
+  fuelEntries: FuelEntry[];
+  trips: Trip[];
+  maintenance: MaintenanceRecord[];
+  fastags: FASTag[];
+  tyres: Tyre[];
+  alerts: Alert[];
+  inventory: InventoryItem[];
+
+  // Vehicle actions
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => void;
+  updateVehicle: (id: number, vehicle: Partial<Vehicle>) => void;
+  deleteVehicle: (id: number) => void;
+
+  // Driver actions
+  addDriver: (driver: Omit<Driver, 'id'>) => void;
+  updateDriver: (id: number, driver: Partial<Driver>) => void;
+  deleteDriver: (id: number) => void;
+
+  // Fuel actions
+  addFuelEntry: (entry: Omit<FuelEntry, 'id'>) => void;
+  deleteFuelEntry: (id: number) => void;
+
+  // Trip actions
+  addTrip: (trip: Omit<Trip, 'id'>) => void;
+  updateTrip: (id: number, trip: Partial<Trip>) => void;
+  deleteTrip: (id: number) => void;
+
+  // Maintenance actions
+  addMaintenance: (record: Omit<MaintenanceRecord, 'id'>) => void;
+  updateMaintenance: (id: number, record: Partial<MaintenanceRecord>) => void;
+  deleteMaintenance: (id: number) => void;
+
+  // FASTag actions
+  addFASTag: (fastag: Omit<FASTag, 'id'>) => void;
+  updateFASTag: (id: number, fastag: Partial<FASTag>) => void;
+  deleteFASTag: (id: number) => void;
+  rechargeFASTag: (id: number, amount: number) => void;
+
+  // Tyre actions
+  addTyre: (tyre: Omit<Tyre, 'id'>) => void;
+  updateTyre: (id: number, tyre: Partial<Tyre>) => void;
+  deleteTyre: (id: number) => void;
+
+  // Alert actions
+  addAlert: (alert: Omit<Alert, 'id'>) => void;
+  markAlertRead: (id: number) => void;
+  clearAlerts: () => void;
+
+  // Inventory actions
+  addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
+  updateInventoryItem: (id: number, item: Partial<InventoryItem>) => void;
+  deleteInventoryItem: (id: number) => void;
+}
+
+export const useFleetStore = create<FleetStore>((set, get) => ({
+  vehicles: initialVehicles,
+  drivers: initialDrivers,
+  fuelEntries: initialFuelEntries,
+  trips: initialTrips,
+  maintenance: initialMaintenance,
+  fastags: initialFASTags,
+  tyres: initialTyres,
+  alerts: initialAlerts,
+  inventory: initialInventory,
+
+  // Vehicle actions
+  addVehicle: (vehicle) => set((state) => ({
+    vehicles: [...state.vehicles, { ...vehicle, id: Math.max(0, ...state.vehicles.map(v => v.id)) + 1 }]
+  })),
+  updateVehicle: (id, vehicle) => set((state) => ({
+    vehicles: state.vehicles.map(v => v.id === id ? { ...v, ...vehicle } : v)
+  })),
+  deleteVehicle: (id) => set((state) => ({
+    vehicles: state.vehicles.filter(v => v.id !== id)
+  })),
+
+  // Driver actions
+  addDriver: (driver) => set((state) => ({
+    drivers: [...state.drivers, { ...driver, id: Math.max(0, ...state.drivers.map(d => d.id)) + 1 }]
+  })),
+  updateDriver: (id, driver) => set((state) => ({
+    drivers: state.drivers.map(d => d.id === id ? { ...d, ...driver } : d)
+  })),
+  deleteDriver: (id) => set((state) => ({
+    drivers: state.drivers.filter(d => d.id !== id)
+  })),
+
+  // Fuel actions
+  addFuelEntry: (entry) => set((state) => ({
+    fuelEntries: [...state.fuelEntries, { ...entry, id: Math.max(0, ...state.fuelEntries.map(e => e.id)) + 1 }]
+  })),
+  deleteFuelEntry: (id) => set((state) => ({
+    fuelEntries: state.fuelEntries.filter(e => e.id !== id)
+  })),
+
+  // Trip actions
+  addTrip: (trip) => set((state) => ({
+    trips: [...state.trips, { ...trip, id: Math.max(0, ...state.trips.map(t => t.id)) + 1 }]
+  })),
+  updateTrip: (id, trip) => set((state) => ({
+    trips: state.trips.map(t => t.id === id ? { ...t, ...trip } : t)
+  })),
+  deleteTrip: (id) => set((state) => ({
+    trips: state.trips.filter(t => t.id !== id)
+  })),
+
+  // Maintenance actions
+  addMaintenance: (record) => set((state) => ({
+    maintenance: [...state.maintenance, { ...record, id: Math.max(0, ...state.maintenance.map(r => r.id)) + 1 }]
+  })),
+  updateMaintenance: (id, record) => set((state) => ({
+    maintenance: state.maintenance.map(r => r.id === id ? { ...r, ...record } : r)
+  })),
+  deleteMaintenance: (id) => set((state) => ({
+    maintenance: state.maintenance.filter(r => r.id !== id)
+  })),
+
+  // FASTag actions
+  addFASTag: (fastag) => set((state) => ({
+    fastags: [...state.fastags, { ...fastag, id: Math.max(0, ...state.fastags.map(f => f.id)) + 1 }]
+  })),
+  updateFASTag: (id, fastag) => set((state) => ({
+    fastags: state.fastags.map(f => f.id === id ? { ...f, ...fastag } : f)
+  })),
+  deleteFASTag: (id) => set((state) => ({
+    fastags: state.fastags.filter(f => f.id !== id)
+  })),
+  rechargeFASTag: (id, amount) => set((state) => ({
+    fastags: state.fastags.map(f => {
+      if (f.id !== id) return f;
+      const newBalance = f.balance + amount;
+      return {
+        ...f,
+        balance: newBalance,
+        status: newBalance >= f.threshold ? 'ok' : (newBalance > 0 ? 'warning' : 'critical')
+      };
+    })
+  })),
+
+  // Tyre actions
+  addTyre: (tyre) => set((state) => ({
+    tyres: [...state.tyres, { ...tyre, id: Math.max(0, ...state.tyres.map(t => t.id)) + 1 }]
+  })),
+  updateTyre: (id, tyre) => set((state) => ({
+    tyres: state.tyres.map(t => t.id === id ? { ...t, ...tyre } : t)
+  })),
+  deleteTyre: (id) => set((state) => ({
+    tyres: state.tyres.filter(t => t.id !== id)
+  })),
+
+  // Alert actions
+  addAlert: (alert) => set((state) => ({
+    alerts: [...state.alerts, { ...alert, id: Math.max(0, ...state.alerts.map(a => a.id)) + 1 }]
+  })),
+  markAlertRead: (id) => set((state) => ({
+    alerts: state.alerts.map(a => a.id === id ? { ...a, read: true } : a)
+  })),
+  clearAlerts: () => set({ alerts: [] }),
+
+  // Inventory actions
+  addInventoryItem: (item) => set((state) => ({
+    inventory: [...state.inventory, { ...item, id: Math.max(0, ...state.inventory.map(i => i.id)) + 1 }]
+  })),
+  updateInventoryItem: (id, item) => set((state) => ({
+    inventory: state.inventory.map(i => i.id === id ? { ...i, ...item } : i)
+  })),
+  deleteInventoryItem: (id) => set((state) => ({
+    inventory: state.inventory.filter(i => i.id !== id)
+  })),
+}));
