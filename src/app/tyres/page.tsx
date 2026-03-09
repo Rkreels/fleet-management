@@ -37,12 +37,13 @@ import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 
 export default function TyresPage() {
-  const { tyres, vehicles, addTyre, deleteTyre } = useFleetStore()
+  const { tyres, vehicles, addTyre, deleteTyre, updateTyre } = useFleetStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortField, setSortField] = useState<string>('wearPercentage')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [viewTyre, setViewTyre] = useState<any>(null)
+  const [updateKmInput, setUpdateKmInput] = useState('')
   
   // Form state
   const [form, setForm] = useState({
@@ -166,6 +167,60 @@ export default function TyresPage() {
       title: 'Tyre Deleted',
       description: 'Tyre record has been deleted',
     })
+  }
+
+  const handleUpdateCurrentKm = () => {
+    if (!viewTyre || !updateKmInput) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid KM reading',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const newCurrentKm = parseInt(updateKmInput)
+    if (isNaN(newCurrentKm) || newCurrentKm < viewTyre.changeKm) {
+      toast({
+        title: 'Invalid KM',
+        description: 'Current KM must be greater than or equal to Change KM',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const kmUsed = newCurrentKm - viewTyre.changeKm
+    const wearPercentage = (kmUsed / viewTyre.mileage) * 100
+    const newCpkm = kmUsed > 0 ? viewTyre.cost / kmUsed : 0
+
+    updateTyre(viewTyre.id, {
+      currentKm: newCurrentKm,
+      cpkm: newCpkm,
+    })
+
+    // Update viewTyre with new values
+    setViewTyre({
+      ...viewTyre,
+      currentKm: newCurrentKm,
+      kmUsed: kmUsed,
+      wearPercentage: wearPercentage,
+      cpkm: newCpkm,
+    })
+
+    setUpdateKmInput('')
+    toast({
+      title: 'KM Updated',
+      description: 'Current KM has been updated successfully',
+    })
+  }
+
+  const handleViewTyre = (tyre: any) => {
+    setViewTyre({
+      ...tyre,
+      kmUsed: tyre.currentKm - tyre.changeKm,
+      wearPercentage: ((tyre.currentKm - tyre.changeKm) / tyre.mileage) * 100,
+    })
+    setUpdateKmInput('')
   }
 
   const handleExport = () => {
@@ -538,7 +593,7 @@ export default function TyresPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewTyre(tyre)}>
+                            <DropdownMenuItem onClick={() => handleViewTyre(tyre)}>
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
@@ -662,13 +717,33 @@ export default function TyresPage() {
                     className="h-3"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {viewTyre.wearPercentage >= 80 
+                    {viewTyre.wearPercentage >= 80
                       ? 'This tyre is near the end of its life and should be replaced soon.'
                       : viewTyre.wearPercentage >= 60
                       ? 'Monitor this tyre regularly. Consider replacement planning.'
                       : 'This tyre is in good condition with plenty of life remaining.'}
                   </p>
                 </div>
+              </div>
+
+              {/* Update Current KM Section */}
+              <div className="pt-4 border-t space-y-3">
+                <Label className="font-semibold">Update Current KM</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={updateKmInput}
+                    onChange={(e) => setUpdateKmInput(e.target.value)}
+                    placeholder="Enter new KM reading"
+                    min={viewTyre.changeKm}
+                  />
+                  <Button onClick={handleUpdateCurrentKm} className="bg-orange-500 hover:bg-orange-600">
+                    Update
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Current: {viewTyre.currentKm.toLocaleString()} KM • Change: {viewTyre.changeKm.toLocaleString()} KM
+                </p>
               </div>
             </div>
           </DialogContent>

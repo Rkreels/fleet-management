@@ -2,14 +2,27 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Package, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Package, Download, AlertTriangle, Edit2, Trash2, X } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { useFleetStore } from '@/lib/store';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const InventoryPage = () => {
-  const { inventory, addInventoryItem } = useFleetStore();
+  const { inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem } = useFleetStore();
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [deletingItem, setDeletingItem] = useState<any>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'low' | 'critical'>('all');
   const [form, setForm] = useState({ name: '', category: '', quantity: '', minStock: '', location: '', unit: '' });
@@ -48,6 +61,57 @@ const InventoryPage = () => {
     toast.success('Item added to inventory!');
   };
 
+  const handleEdit = (item: any) => {
+    setEditingItem(item);
+    setForm({
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity.toString(),
+      minStock: item.minStock.toString(),
+      location: item.location,
+      unit: item.unit,
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdate = () => {
+    if (!form.name || !form.quantity) {
+      toast.error('Fill required fields');
+      return;
+    }
+    const quantity = parseInt(form.quantity) || 0;
+    const minStock = parseInt(form.minStock) || 10;
+    const status: 'ok' | 'low' | 'critical' = quantity <= minStock * 0.5 ? 'critical' : quantity < minStock ? 'low' : 'ok';
+    updateInventoryItem(editingItem.id, {
+      name: form.name,
+      category: form.category || 'General',
+      quantity,
+      unit: form.unit || 'pcs',
+      minStock,
+      location: form.location || 'Main Warehouse',
+      lastUpdated: new Date().toISOString().split('T')[0],
+      status,
+    });
+    setForm({ name: '', category: '', quantity: '', minStock: '', location: '', unit: '' });
+    setEditingItem(null);
+    setEditOpen(false);
+    toast.success('Item updated successfully!');
+  };
+
+  const handleDeleteClick = (item: any) => {
+    setDeletingItem(item);
+    setDeleteOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (deletingItem) {
+      deleteInventoryItem(deletingItem.id);
+      setDeletingItem(null);
+      setDeleteOpen(false);
+      toast.success('Item deleted successfully!');
+    }
+  };
+
   const handleDownload = () => {
     const csv = [
       'Name,Category,Quantity,Unit,Min Stock,Location,Status,Last Updated',
@@ -72,20 +136,14 @@ const InventoryPage = () => {
             <p className="text-slate-500 text-sm">{inventory.length} items in stock</p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all text-sm font-medium"
-            >
-              <Download size={16} />
+            <Button variant="outline" onClick={handleDownload}>
+              <Download size={16} className="mr-2" />
               Export
-            </button>
-            <button
-              onClick={() => setAddOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#f97316] text-white rounded-lg hover:bg-[#ea6c0a] transition-all text-sm font-medium"
-            >
-              <Plus size={16} />
+            </Button>
+            <Button onClick={() => setAddOpen(true)} className="bg-orange-500 hover:bg-orange-600">
+              <Plus size={16} className="mr-2" />
               Add Item
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -148,7 +206,7 @@ const InventoryPage = () => {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  {['Item Name', 'Category', 'Quantity', 'Unit', 'Min Stock', 'Location', 'Status', 'Last Updated'].map((h) => (
+                  {['Item Name', 'Category', 'Quantity', 'Unit', 'Min Stock', 'Location', 'Status', 'Last Updated', 'Actions'].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">
                       {h}
                     </th>
@@ -184,6 +242,24 @@ const InventoryPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-sm">{item.lastUpdated}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(item)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </motion.tr>
                 ))}
               </tbody>
@@ -191,47 +267,101 @@ const InventoryPage = () => {
           </div>
         </div>
 
-        {addOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-              <h2 className="font-bold text-slate-800 text-lg mb-4">Add Inventory Item</h2>
-              <div className="space-y-3">
-                {[
-                  { key: 'name', label: 'Item Name', placeholder: 'Engine Oil' },
-                  { key: 'category', label: 'Category', placeholder: 'Lubricants' },
-                  { key: 'quantity', label: 'Quantity', placeholder: '50' },
-                  { key: 'unit', label: 'Unit', placeholder: 'L / pcs / sets' },
-                  { key: 'minStock', label: 'Minimum Stock Level', placeholder: '20' },
-                  { key: 'location', label: 'Storage Location', placeholder: 'Warehouse A' },
-                ].map((f) => (
-                  <div key={f.key}>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">{f.label}</label>
-                    <input
-                      value={form[f.key as keyof typeof form]}
-                      onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                      placeholder={f.placeholder}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3 mt-5">
-                <button
-                  onClick={() => setAddOpen(false)}
-                  className="flex-1 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAdd}
-                  className="flex-1 py-2.5 bg-[#f97316] text-white rounded-lg hover:bg-[#ea6c0a] transition-all text-sm font-medium"
-                >
-                  Add Item
-                </button>
-              </div>
+        {/* Add Modal */}
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Inventory Item</DialogTitle>
+              <DialogDescription>Add a new item to the inventory.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {[
+                { key: 'name', label: 'Item Name', placeholder: 'Engine Oil' },
+                { key: 'category', label: 'Category', placeholder: 'Lubricants' },
+                { key: 'quantity', label: 'Quantity', placeholder: '50' },
+                { key: 'unit', label: 'Unit', placeholder: 'L / pcs / sets' },
+                { key: 'minStock', label: 'Minimum Stock Level', placeholder: '20' },
+                { key: 'location', label: 'Storage Location', placeholder: 'Warehouse A' },
+              ].map((f) => (
+                <div key={f.key}>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">{f.label}</label>
+                  <input
+                    value={form[f.key as keyof typeof form]}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  />
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAdd} className="bg-orange-500 hover:bg-orange-600">
+                Add Item
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Modal */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Inventory Item</DialogTitle>
+              <DialogDescription>Update the inventory item details.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {[
+                { key: 'name', label: 'Item Name', placeholder: 'Engine Oil' },
+                { key: 'category', label: 'Category', placeholder: 'Lubricants' },
+                { key: 'quantity', label: 'Quantity', placeholder: '50' },
+                { key: 'unit', label: 'Unit', placeholder: 'L / pcs / sets' },
+                { key: 'minStock', label: 'Minimum Stock Level', placeholder: '20' },
+                { key: 'location', label: 'Storage Location', placeholder: 'Warehouse A' },
+              ].map((f) => (
+                <div key={f.key}>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">{f.label}</label>
+                  <input
+                    value={form[f.key as keyof typeof form]}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  />
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setEditOpen(false); setEditingItem(null); }}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdate} className="bg-orange-500 hover:bg-orange-600">
+                Update Item
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete <span className="font-semibold">{deletingItem?.name}</span>? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeletingItem(null); }}>
+                Cancel
+              </Button>
+              <Button onClick={handleDelete} variant="destructive">
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

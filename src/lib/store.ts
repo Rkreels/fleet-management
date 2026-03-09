@@ -144,6 +144,34 @@ export interface InventoryItem {
   status: 'ok' | 'low' | 'critical';
 }
 
+// Settings types
+export interface CompanyInfo {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  website: string;
+  gstin: string;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+}
+
+export interface NotificationSettings {
+  emailAlerts: boolean;
+  pushNotifications: boolean;
+  smsAlerts: boolean;
+  weeklyReport: boolean;
+  maintenanceReminders: boolean;
+  fuelAlerts: boolean;
+  driverAlerts: boolean;
+  vehicleAlerts: boolean;
+}
+
 // Initial Data - 30 Vehicles
 const initialVehicles: Vehicle[] = [
   {
@@ -1050,6 +1078,34 @@ const initialInventory: InventoryItem[] = [
   { id: 30, name: 'Engine Gasket Set', category: 'Parts', quantity: 3, unit: 'sets', minStock: 5, location: 'Warehouse C', lastUpdated: '2026-01-06', status: 'low' },
 ];
 
+// Initial Settings Data (In-Memory Only)
+const initialCompanyInfo: CompanyInfo = {
+  name: 'Fleet Management Solutions',
+  email: 'contact@fleetmgmt.com',
+  phone: '+880 2-98765432',
+  address: '123 Gulshan Avenue, Dhaka - 1212, Bangladesh',
+  website: 'www.fleetmgmt.com',
+  gstin: 'BD-123456789'
+};
+
+const initialUserProfile: UserProfile = {
+  name: 'Admin User',
+  email: 'admin@fleetmgmt.com',
+  phone: '+880 1XXXXXXXXX',
+  role: 'Fleet Manager'
+};
+
+const initialNotifications: NotificationSettings = {
+  emailAlerts: true,
+  pushNotifications: true,
+  smsAlerts: false,
+  weeklyReport: true,
+  maintenanceReminders: true,
+  fuelAlerts: true,
+  driverAlerts: true,
+  vehicleAlerts: true
+};
+
 interface FleetStore {
   vehicles: Vehicle[];
   drivers: Driver[];
@@ -1060,6 +1116,12 @@ interface FleetStore {
   tyres: Tyre[];
   alerts: Alert[];
   inventory: InventoryItem[];
+
+  // Settings (In-Memory Only)
+  companyInfo: CompanyInfo;
+  userProfile: UserProfile;
+  notifications: NotificationSettings;
+  theme: 'light' | 'dark' | 'system';
 
   // Vehicle actions
   addVehicle: (vehicle: Omit<Vehicle, 'id'>) => void;
@@ -1106,6 +1168,12 @@ interface FleetStore {
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
   updateInventoryItem: (id: number, item: Partial<InventoryItem>) => void;
   deleteInventoryItem: (id: number) => void;
+
+  // Settings actions (In-Memory Only)
+  updateCompanyInfo: (info: Partial<CompanyInfo>) => void;
+  updateUserProfile: (profile: Partial<UserProfile>) => void;
+  updateNotifications: (notifications: Partial<NotificationSettings>) => void;
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }
 
 export const useFleetStore = create<FleetStore>((set, get) => ({
@@ -1118,6 +1186,12 @@ export const useFleetStore = create<FleetStore>((set, get) => ({
   tyres: initialTyres,
   alerts: initialAlerts,
   inventory: initialInventory,
+
+  // Settings (In-Memory Only)
+  companyInfo: initialCompanyInfo,
+  userProfile: initialUserProfile,
+  notifications: initialNotifications,
+  theme: 'light',
 
   // Vehicle actions
   addVehicle: (vehicle) => set((state) => ({
@@ -1226,4 +1300,16 @@ export const useFleetStore = create<FleetStore>((set, get) => ({
   deleteInventoryItem: (id) => set((state) => ({
     inventory: state.inventory.filter(i => i.id !== id)
   })),
+
+  // Settings actions (In-Memory Only)
+  updateCompanyInfo: (info) => set((state) => ({
+    companyInfo: { ...state.companyInfo, ...info }
+  })),
+  updateUserProfile: (profile) => set((state) => ({
+    userProfile: { ...state.userProfile, ...profile }
+  })),
+  updateNotifications: (notifications) => set((state) => ({
+    notifications: { ...state.notifications, ...notifications }
+  })),
+  setTheme: (theme) => set({ theme }),
 }));

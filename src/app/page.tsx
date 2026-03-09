@@ -56,12 +56,56 @@ export default function Dashboard() {
     })
 
     setTimeout(() => {
+      // Generate comprehensive CSV report
+      const reportDate = new Date().toISOString().split('T')[0]
+
+      const csvContent = [
+        `Fleet Management Dashboard Report - ${reportDate}`,
+        '',
+        '=== KEY PERFORMANCE INDICATORS ===',
+        'Metric,Value',
+        `Total Vehicles,${totalVehicles}`,
+        `Active Drivers,${activeDrivers}`,
+        `Monthly Fuel Cost (BDT),${monthlyFuelCost.toLocaleString()}`,
+        `Pending Alerts,${pendingAlerts}`,
+        '',
+        '=== FUEL EFFICIENCY TREND (Last 6 Months) ===',
+        'Month,Efficiency (KM/L),Cost (BDT)',
+        ...fuelEfficiencyData.map(d => `${d.month},${d.efficiency},${d.cost.toLocaleString()}`),
+        '',
+        '=== MONTHLY EXPENSES (Last 6 Months) ===',
+        'Month,Fuel (BDT),Maintenance (BDT),Toll (BDT),Total (BDT)',
+        ...monthlyExpensesData.map(d => `${d.month},${d.fuel.toLocaleString()},${d.maintenance.toLocaleString()},${d.toll.toLocaleString()},${d.total.toLocaleString()}`),
+        '',
+        '=== RECENT ALERTS ===',
+        'Type,Message,Time,Status',
+        ...alerts.slice(0, 10).map(a => `${a.type},"${a.msg}",${a.time},${a.read ? 'Read' : 'Unread'}`),
+        '',
+        '=== VEHICLE SUMMARY ===',
+        'Registration,Model,Driver,Status,KM Reading,Fuel Level,Location',
+        ...vehicles.slice(0, 10).map(v => `${v.regNo},"${v.model}",${v.driver},${v.status},${v.kmReading},${v.fuelLevel}%,"${v.location}"`),
+        '',
+        '=== END OF REPORT ===',
+        `Generated on: ${new Date().toLocaleString()}`,
+      ].join('\n')
+
+      // Create and download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `fleet-dashboard-report-${reportDate}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
       setIsLoading(false)
       toast({
         title: 'Report Exported',
         description: 'Dashboard report has been downloaded successfully',
       })
-    }, 2000)
+    }, 1500)
   }
 
   const handleMarkAllRead = () => {
@@ -235,9 +279,10 @@ export default function Dashboard() {
               </div>
               <StatusBadge status="active" size="sm" />
             </div>
-            <div className="min-h-[500px]">
-              <LiveMapView />
-            </div>
+        {/* Live Map - Fixed height for proper rendering */}
+        <div className="h-[500px]">
+          <LiveMapView />
+        </div>
           </motion.div>
 
           {/* Recent Alerts */}

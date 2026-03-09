@@ -47,6 +47,14 @@ export default function MaintenancePage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [viewRecord, setViewRecord] = useState<any>(null)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    minCost: '',
+    maxCost: '',
+    vehicleType: 'all',
+  })
 
   // Calculate KPIs
   const totalCost = maintenance.reduce((sum, m) => sum + m.cost + m.gst, 0)
@@ -62,12 +70,35 @@ export default function MaintenancePage() {
   // Filter and sort maintenance records
   const filteredMaintenance = maintenance
     .filter(m => {
-      const matchesSearch = 
+      const matchesSearch =
         m.vehicle.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.work.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === 'all' || m.status === statusFilter
-      return matchesSearch && matchesStatus
+
+      // Advanced filters
+      let matchesDateRange = true
+      if (advancedFilters.dateFrom) {
+        matchesDateRange = matchesDateRange && new Date(m.date) >= new Date(advancedFilters.dateFrom)
+      }
+      if (advancedFilters.dateTo) {
+        matchesDateRange = matchesDateRange && new Date(m.date) <= new Date(advancedFilters.dateTo)
+      }
+
+      let matchesCostRange = true
+      if (advancedFilters.minCost) {
+        matchesCostRange = matchesCostRange && m.cost >= parseInt(advancedFilters.minCost)
+      }
+      if (advancedFilters.maxCost) {
+        matchesCostRange = matchesCostRange && m.cost <= parseInt(advancedFilters.maxCost)
+      }
+
+      const matchesVehicleType =
+        advancedFilters.vehicleType === 'all' ||
+        (advancedFilters.vehicleType === 'active' && vehicles.find(v => v.id === m.vehicleId)?.status === 'active') ||
+        (advancedFilters.vehicleType === 'inactive' && vehicles.find(v => v.id === m.vehicleId)?.status === 'inactive')
+
+      return matchesSearch && matchesStatus && matchesDateRange && matchesCostRange && matchesVehicleType
     })
     .sort((a, b) => {
       let comparison = 0
@@ -88,6 +119,29 @@ export default function MaintenancePage() {
       setSortField(field)
       setSortDirection('desc')
     }
+  }
+
+  const handleClearFilters = () => {
+    setAdvancedFilters({
+      dateFrom: '',
+      dateTo: '',
+      minCost: '',
+      maxCost: '',
+      vehicleType: 'all',
+    })
+    setIsFilterOpen(false)
+    toast({
+      title: 'Filters Cleared',
+      description: 'All advanced filters have been reset',
+    })
+  }
+
+  const handleApplyFilters = () => {
+    setIsFilterOpen(false)
+    toast({
+      title: 'Filters Applied',
+      description: 'Advanced filters have been applied',
+    })
   }
 
   const handleApprove = (id: number) => {
@@ -301,9 +355,92 @@ export default function MaintenancePage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" size="icon">
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
+            <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Advanced Filters</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Date From</Label>
+                      <Input
+                        type="date"
+                        value={advancedFilters.dateFrom}
+                        onChange={(e) => setAdvancedFilters({ ...advancedFilters, dateFrom: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Date To</Label>
+                      <Input
+                        type="date"
+                        value={advancedFilters.dateTo}
+                        onChange={(e) => setAdvancedFilters({ ...advancedFilters, dateTo: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Min Cost (৳)</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={advancedFilters.minCost}
+                        onChange={(e) => setAdvancedFilters({ ...advancedFilters, minCost: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Cost (৳)</Label>
+                      <Input
+                        type="number"
+                        placeholder="999999"
+                        value={advancedFilters.maxCost}
+                        onChange={(e) => setAdvancedFilters({ ...advancedFilters, maxCost: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Vehicle Status</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={advancedFilters.vehicleType === 'all' ? 'default' : 'outline'}
+                        onClick={() => setAdvancedFilters({ ...advancedFilters, vehicleType: 'all' })}
+                      >
+                        All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={advancedFilters.vehicleType === 'active' ? 'default' : 'outline'}
+                        onClick={() => setAdvancedFilters({ ...advancedFilters, vehicleType: 'active' })}
+                      >
+                        Active
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={advancedFilters.vehicleType === 'inactive' ? 'default' : 'outline'}
+                        onClick={() => setAdvancedFilters({ ...advancedFilters, vehicleType: 'inactive' })}
+                      >
+                        Inactive
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear Filters
+                  </Button>
+                  <Button onClick={handleApplyFilters} className="bg-orange-500 hover:bg-orange-600">
+                    Apply Filters
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           <Button variant="outline" onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" />

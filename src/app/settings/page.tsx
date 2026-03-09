@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Layout } from '@/components/Layout'
 import { toast } from 'sonner'
+import { useFleetStore } from '@/lib/store'
 import {
   Building2, User, Bell, Moon, Sun, Save, Shield,
   Mail, Phone, MapPin, Globe, CreditCard
@@ -15,58 +16,89 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useTheme } from 'next-themes'
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme()
+  const {
+    companyInfo,
+    userProfile,
+    notifications,
+    theme,
+    updateCompanyInfo,
+    updateUserProfile,
+    updateNotifications,
+    setTheme
+  } = useFleetStore()
+
   const [isLoading, setIsLoading] = useState(false)
-  const [companyInfo, setCompanyInfo] = useState({
-    name: 'Fleet Management Solutions',
-    email: 'contact@fleetmgmt.com',
-    phone: '+91 98765 43210',
-    address: '123 Business Park, Chennai - 600001',
-    website: 'www.fleetmgmt.com',
-    gstin: '33AAAAA0000A1Z5'
-  })
-  const [userProfile, setUserProfile] = useState({
-    name: 'Admin User',
-    email: 'admin@fleetmgmt.com',
-    phone: '+91 98765 43211',
-    role: 'Fleet Manager'
-  })
-  const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    pushNotifications: true,
-    smsAlerts: false,
-    weeklyReport: true,
-    maintenanceReminders: true,
-    fuelAlerts: true,
-    driverAlerts: true,
-    vehicleAlerts: true
-  })
+
+  // Refs for form elements
+  const companyNameRef = useRef<HTMLInputElement>(null)
+  const companyGstinRef = useRef<HTMLInputElement>(null)
+  const companyEmailRef = useRef<HTMLInputElement>(null)
+  const companyPhoneRef = useRef<HTMLInputElement>(null)
+  const companyWebsiteRef = useRef<HTMLInputElement>(null)
+  const companyAddressRef = useRef<HTMLTextAreaElement>(null)
+
+  const userNameRef = useRef<HTMLInputElement>(null)
+  const userRoleRef = useRef<HTMLInputElement>(null)
+  const userEmailRef = useRef<HTMLInputElement>(null)
+  const userPhoneRef = useRef<HTMLInputElement>(null)
+
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+  }, [theme])
 
   const handleSaveCompany = () => {
     setIsLoading(true)
+    const updatedInfo = {
+      name: companyNameRef.current?.value || companyInfo.name,
+      gstin: companyGstinRef.current?.value || companyInfo.gstin,
+      email: companyEmailRef.current?.value || companyInfo.email,
+      phone: companyPhoneRef.current?.value || companyInfo.phone,
+      website: companyWebsiteRef.current?.value || companyInfo.website,
+      address: companyAddressRef.current?.value || companyInfo.address,
+    }
+    updateCompanyInfo(updatedInfo)
     setTimeout(() => {
       setIsLoading(false)
       toast.success('Company information saved successfully')
-    }, 1000)
+    }, 500)
   }
 
   const handleSaveProfile = () => {
     setIsLoading(true)
+    const updatedProfile = {
+      name: userNameRef.current?.value || userProfile.name,
+      role: userRoleRef.current?.value || userProfile.role,
+      email: userEmailRef.current?.value || userProfile.email,
+      phone: userPhoneRef.current?.value || userProfile.phone,
+    }
+    updateUserProfile(updatedProfile)
     setTimeout(() => {
       setIsLoading(false)
       toast.success('Profile updated successfully')
-    }, 1000)
+    }, 500)
   }
 
   const handleSaveNotifications = () => {
     setIsLoading(true)
+    updateNotifications(notifications)
     setTimeout(() => {
       setIsLoading(false)
       toast.success('Notification preferences saved')
-    }, 1000)
+    }, 500)
+  }
+
+  const handleSaveAll = () => {
+    handleSaveCompany()
+    handleSaveProfile()
+    handleSaveNotifications()
   }
 
   return (
@@ -83,11 +115,7 @@ export default function SettingsPage() {
             <p className="text-muted-foreground mt-1">Manage your account and preferences</p>
           </div>
           <Button
-            onClick={() => {
-              handleSaveCompany()
-              handleSaveProfile()
-              handleSaveNotifications()
-            }}
+            onClick={handleSaveAll}
             disabled={isLoading}
             className="bg-orange-500 hover:bg-orange-600"
           >
@@ -127,50 +155,50 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Company Name</Label>
                   <Input
-                    value={companyInfo.name}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, name: e.target.value })}
+                    ref={companyNameRef}
+                    defaultValue={companyInfo.name}
                     placeholder="Enter company name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>GSTIN</Label>
+                  <Label>GSTIN/BIN</Label>
                   <Input
-                    value={companyInfo.gstin}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, gstin: e.target.value })}
-                    placeholder="Enter GSTIN"
+                    ref={companyGstinRef}
+                    defaultValue={companyInfo.gstin}
+                    placeholder="Enter GSTIN/BIN"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Email Address</Label>
                   <Input
+                    ref={companyEmailRef}
                     type="email"
-                    value={companyInfo.email}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, email: e.target.value })}
+                    defaultValue={companyInfo.email}
                     placeholder="Enter email"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Phone Number</Label>
                   <Input
+                    ref={companyPhoneRef}
                     type="tel"
-                    value={companyInfo.phone}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, phone: e.target.value })}
+                    defaultValue={companyInfo.phone}
                     placeholder="Enter phone number"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Website</Label>
                   <Input
-                    value={companyInfo.website}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, website: e.target.value })}
+                    ref={companyWebsiteRef}
+                    defaultValue={companyInfo.website}
                     placeholder="Enter website URL"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Address</Label>
                   <Textarea
-                    value={companyInfo.address}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, address: e.target.value })}
+                    ref={companyAddressRef}
+                    defaultValue={companyInfo.address}
                     placeholder="Enter company address"
                     rows={3}
                   />
@@ -207,34 +235,34 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Full Name</Label>
                   <Input
-                    value={userProfile.name}
-                    onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })}
+                    ref={userNameRef}
+                    defaultValue={userProfile.name}
                     placeholder="Enter your name"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Role</Label>
                   <Input
-                    value={userProfile.role}
-                    onChange={(e) => setUserProfile({ ...userProfile, role: e.target.value })}
+                    ref={userRoleRef}
+                    defaultValue={userProfile.role}
                     placeholder="Enter your role"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Email Address</Label>
                   <Input
+                    ref={userEmailRef}
                     type="email"
-                    value={userProfile.email}
-                    onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
+                    defaultValue={userProfile.email}
                     placeholder="Enter your email"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Phone Number</Label>
                   <Input
+                    ref={userPhoneRef}
                     type="tel"
-                    value={userProfile.phone}
-                    onChange={(e) => setUserProfile({ ...userProfile, phone: e.target.value })}
+                    defaultValue={userProfile.phone}
                     placeholder="Enter your phone number"
                   />
                 </div>
@@ -279,7 +307,7 @@ export default function SettingsPage() {
                   <Switch
                     checked={notifications.emailAlerts}
                     onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, emailAlerts: checked })
+                      updateNotifications({ ...notifications, emailAlerts: checked })
                     }
                   />
                 </div>
@@ -296,7 +324,7 @@ export default function SettingsPage() {
                   <Switch
                     checked={notifications.pushNotifications}
                     onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, pushNotifications: checked })
+                      updateNotifications({ ...notifications, pushNotifications: checked })
                     }
                   />
                 </div>
@@ -313,7 +341,7 @@ export default function SettingsPage() {
                   <Switch
                     checked={notifications.smsAlerts}
                     onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, smsAlerts: checked })
+                      updateNotifications({ ...notifications, smsAlerts: checked })
                     }
                   />
                 </div>
@@ -326,7 +354,7 @@ export default function SettingsPage() {
                       <Switch
                         checked={notifications.weeklyReport}
                         onCheckedChange={(checked) =>
-                          setNotifications({ ...notifications, weeklyReport: checked })
+                          updateNotifications({ ...notifications, weeklyReport: checked })
                         }
                       />
                     </div>
@@ -335,7 +363,7 @@ export default function SettingsPage() {
                       <Switch
                         checked={notifications.maintenanceReminders}
                         onCheckedChange={(checked) =>
-                          setNotifications({ ...notifications, maintenanceReminders: checked })
+                          updateNotifications({ ...notifications, maintenanceReminders: checked })
                         }
                       />
                     </div>
@@ -344,7 +372,7 @@ export default function SettingsPage() {
                       <Switch
                         checked={notifications.fuelAlerts}
                         onCheckedChange={(checked) =>
-                          setNotifications({ ...notifications, fuelAlerts: checked })
+                          updateNotifications({ ...notifications, fuelAlerts: checked })
                         }
                       />
                     </div>
@@ -353,7 +381,7 @@ export default function SettingsPage() {
                       <Switch
                         checked={notifications.driverAlerts}
                         onCheckedChange={(checked) =>
-                          setNotifications({ ...notifications, driverAlerts: checked })
+                          updateNotifications({ ...notifications, driverAlerts: checked })
                         }
                       />
                     </div>
@@ -362,7 +390,7 @@ export default function SettingsPage() {
                       <Switch
                         checked={notifications.vehicleAlerts}
                         onCheckedChange={(checked) =>
-                          setNotifications({ ...notifications, vehicleAlerts: checked })
+                          updateNotifications({ ...notifications, vehicleAlerts: checked })
                         }
                       />
                     </div>
