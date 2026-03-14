@@ -192,7 +192,7 @@ export default function DriversPage() {
   }
 
   const getRatingStars = (rating: number) => {
-    const stars = []
+    const stars: React.ReactElement[] = []
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <Star
