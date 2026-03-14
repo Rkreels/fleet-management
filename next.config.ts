@@ -1,12 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
+  reactStrictMode: true,
+  basePath: "/fleet-management",
+  assetPrefix: "/fleet-management",
+  images: {
+    unoptimized: true,
   },
-  reactStrictMode: false,
 };
 
 export default nextConfig;
