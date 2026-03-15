@@ -9,5 +9,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/fleet-management/:path*",
+      "destination": "/:path*"
+    }
   ]
 }
