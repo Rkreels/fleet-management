@@ -5,9 +5,13 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://careertodo.com"
+          "value": "https://careertodonew.vercel.app/"
         }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/fleet-management/:path(.*)", "destination": "/:path$1" },
+    { "source": "/fleet-management", "destination": "/" }
   ]
 }
