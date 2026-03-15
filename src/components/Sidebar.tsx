@@ -22,20 +22,20 @@ import {
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Vehicles', href: '/vehicles', icon: Truck },
-  { name: 'Drivers', href: '/drivers', icon: User },
-  { name: 'GPS', href: '/gps', icon: MapPin },
-  { name: 'Fuel', href: '/fuel', icon: Fuel },
-  { name: 'FASTag', href: '/fastag', icon: CreditCard },
-  { name: 'Maintenance', href: '/maintenance', icon: Wrench },
-  { name: 'Tyres', href: '/tyres', icon: Circle },
-  { name: 'Trips', href: '/trips', icon: Route },
-  { name: 'Inventory', href: '/inventory', icon: Package },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
-  { name: 'SAP Export', href: '/sap-export', icon: FileDown },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/fleet-management/', icon: LayoutDashboard },
+  { name: 'Vehicles', href: '/fleet-management/vehicles', icon: Truck },
+  { name: 'Drivers', href: '/fleet-management/drivers', icon: User },
+  { name: 'GPS', href: '/fleet-management/gps', icon: MapPin },
+  { name: 'Fuel', href: '/fleet-management/fuel', icon: Fuel },
+  { name: 'FASTag', href: '/fleet-management/fastag', icon: CreditCard },
+  { name: 'Maintenance', href: '/fleet-management/maintenance', icon: Wrench },
+  { name: 'Tyres', href: '/fleet-management/tyres', icon: Circle },
+  { name: 'Trips', href: '/fleet-management/trips', icon: Route },
+  { name: 'Inventory', href: '/fleet-management/inventory', icon: Package },
+  { name: 'Reports', href: '/fleet-management/reports', icon: FileText },
+  { name: 'Alerts', href: '/fleet-management/alerts', icon: AlertTriangle },
+  { name: 'SAP Export', href: '/fleet-management/sap-export', icon: FileDown },
+  { name: 'Settings', href: '/fleet-management/settings', icon: Settings },
 ]
 
 export function Sidebar() {
