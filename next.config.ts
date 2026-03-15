@@ -4,7 +4,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   basePath: "/fleet-management",
   assetPrefix: "/fleet-management",
-  output: "standalone",
   images: {
     unoptimized: true,
   },
