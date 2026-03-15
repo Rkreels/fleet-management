@@ -57,7 +57,7 @@ export default function MaintenancePage() {
   })
 
   // Calculate KPIs
-  const totalCost = maintenance.reduce((sum, m) => sum + m.cost + m.gst, 0)
+  const totalCost = maintenance.reduce((sum, m) => sum + m.cost + m.vat, 0)
   const pendingApprovals = maintenance.filter(m => m.status === 'pending').length
   const serviceDue = vehicles.filter(v => {
     const nextServiceKm = parseInt(v.nextService.replace(/,/g, ''))
@@ -165,7 +165,7 @@ export default function MaintenancePage() {
       work: formData.get('work') as string,
       vendor: formData.get('vendor') as string,
       cost: parseFloat(formData.get('cost') as string),
-      gst: parseFloat(formData.get('gst') as string),
+      vat: parseFloat(formData.get('vat') as string),
       status: 'pending' as const,
       nextKm: parseInt(formData.get('nextKm') as string),
     })
@@ -178,15 +178,15 @@ export default function MaintenancePage() {
 
   const handleExport = () => {
     const csvContent = [
-      ['Vehicle', 'Date', 'Work Description', 'Vendor', 'Cost', 'GST', 'Total', 'Next KM', 'Status'].join(','),
+      ['Vehicle', 'Date', 'Work Description', 'Vendor', 'Cost', 'VAT', 'Total', 'Next KM', 'Status'].join(','),
       ...filteredMaintenance.map(m => [
         m.vehicle,
         m.date,
         `"${m.work}"`,
         m.vendor,
         m.cost,
-        m.gst,
-        m.cost + m.gst,
+        m.vat,
+        m.cost + m.vat,
         m.nextKm,
         m.status
       ].join(','))
@@ -529,7 +529,7 @@ export default function MaintenancePage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        {record.gst?.toLocaleString() || '0'}
+                        {record.vat?.toLocaleString() || '0'}
                       </div>
                     </TableCell>
                     <TableCell>

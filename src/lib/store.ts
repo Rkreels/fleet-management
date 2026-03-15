@@ -1161,6 +1161,7 @@ interface FleetStore {
   // Alert actions
   addAlert: (alert: Omit<Alert, 'id'>) => void;
   markAlertRead: (id: number) => void;
+  markAlertsRead: () => void;
   clearAlerts: () => void;
   deleteAlert: (id: number) => void;
 
@@ -1284,6 +1285,9 @@ export const useFleetStore = create<FleetStore>((set, get) => ({
   })),
   markAlertRead: (id) => set((state) => ({
     alerts: state.alerts.map(a => a.id === id ? { ...a, read: true } : a)
+  })),
+  markAlertsRead: () => set((state) => ({
+    alerts: state.alerts.map(a => ({ ...a, read: true }))
   })),
   clearAlerts: () => set({ alerts: [] }),
   deleteAlert: (id) => set((state) => ({

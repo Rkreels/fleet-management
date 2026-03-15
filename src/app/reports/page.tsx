@@ -106,6 +106,7 @@ export default function ReportsPage() {
 
   const handleExportCSV = () => {
     let csvContent = ''
+    const reportDate = new Date().toISOString().split('T')[0]
 
     if (reportType === 'vehicle') {
       csvContent = ['Vehicle Registration No, Model, Chassis, Engine, Driver, Status, KM Reading, Fuel Level, Location, Purchase Date'].join(',')
@@ -125,12 +126,12 @@ export default function ReportsPage() {
     } else if (reportType === 'trip') {
       csvContent = ['From, To, Distance (KM), Freight (৳), Fuel Cost (৳), Toll Cost (৳), Other Cost (৳), Profit (৳)'].join(',')
       csvContent += trips.map(t =>
-        [t.from, t.to, t.distance, t.freight, t.fuelCost, t.tollCost, t.otherCost, (t.freight - t.fuelCost - t.tollCost).toFixed(2), t.profit].join(',')
+        [t.from, t.to, t.distance, t.freight, t.fuelCost, t.tollCost, t.otherCost, (t.freight - t.fuelCost - t.tollCost - t.otherCost).toFixed(2)].join(',')
       ).join('\n')
     } else if (reportType === 'maintenance') {
-      csvContent = ['Vehicle, Work Done, Vendor, Cost (৳), GST (৳), Total (৳)'].join(',')
+      csvContent = ['Vehicle, Work Done, Vendor, Cost (৳), VAT (৳), Total (৳)'].join(',')
       csvContent += maintenance.map(m =>
-        [m.vehicle, m.work.substring(0, 20) + '...', m.vendor, m.cost, m.gst, (m.cost + m.gst).toLocaleString()].join(',')
+        [m.vehicle, m.work.substring(0, 20) + '...', m.vendor, m.cost, m.vat, (m.cost + m.vat).toLocaleString()].join(',')
       ).join('\n')
     }
 
@@ -185,8 +186,8 @@ export default function ReportsPage() {
   const maintenanceSummaryData = maintenance.map(m => ({
     vehicle: m.vehicle,
     cost: m.cost,
-    gst: m.gst,
-    total: m.cost + m.gst,
+    vat: m.vat,
+    total: m.cost + m.vat,
     work: m.work.substring(0, 20) + '...'
   }))
 
@@ -457,8 +458,8 @@ export default function ReportsPage() {
                       <TableCell>{record.work}</TableCell>
                       <TableCell>{record.vendor}</TableCell>
                       <TableCell>৳{record.cost.toLocaleString()}</TableCell>
-                      <TableCell>৳{record.gst.toLocaleString()}</TableCell>
-                      <TableCell>৳{(record.cost + record.gst).toLocaleString()}</TableCell>
+                      <TableCell>৳{record.vat.toLocaleString()}</TableCell>
+                      <TableCell>৳{(record.cost + record.vat).toLocaleString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

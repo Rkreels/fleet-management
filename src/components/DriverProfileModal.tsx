@@ -30,7 +30,7 @@ export function DriverProfileModal({ children, driverId }: DriverProfileModalPro
   const assignedVehicle = vehicles.find(v => v.id === driver.vehicleId)
 
   const getRatingStars = (rating: number) => {
-    const stars = []
+    const stars: React.ReactNode[] = []
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <Star
@@ -64,7 +64,7 @@ export function DriverProfileModal({ children, driverId }: DriverProfileModalPro
       return 'text-red-600'
     }
     if (type === 'efficiency') {
-      const efficiency = parseFloat(value)
+      const efficiency = value
       if (efficiency >= 5.0) return 'text-green-600'
       if (efficiency >= 4.5) return 'text-blue-600'
       if (efficiency >= 4.0) return 'text-yellow-600'

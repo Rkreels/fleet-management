@@ -15,9 +15,13 @@ import {
 } from 'lucide-react'
 
 interface AIScanModalProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   documentType?: 'vehicle' | 'driver' | 'fuel' | 'maintenance'
   onScanComplete?: (data: any) => void
+  open?: boolean
+  onClose?: () => void
+  mode?: string
+  onResult?: (result: any) => void
 }
 
 interface ExtractedData {
@@ -31,8 +35,12 @@ interface ExtractedData {
   rawText?: string
 }
 
-export function AIScanModal({ children, documentType = 'vehicle', onScanComplete }: AIScanModalProps) {
-  const [open, setOpen] = useState(false)
+export function AIScanModal({ children, documentType = 'vehicle', onScanComplete, open: externalOpen, onClose: externalOnClose, mode, onResult }: AIScanModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isExternal = externalOpen !== undefined
+  const open = isExternal ? externalOpen : internalOpen
+  const setOpen = isExternal ? (value: boolean) => { if (!value) externalOnClose?.() } : setInternalOpen
+  const effectiveDocType = mode as AIScanModalProps['documentType'] || documentType
   const [isScanning, setIsScanning] = useState(false)
   const [scanComplete, setScanComplete] = useState(false)
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null)
@@ -114,7 +122,7 @@ export function AIScanModal({ children, documentType = 'vehicle', onScanComplete
       rawText: 'Document scanned successfully. All information has been extracted using AI OCR technology.'
     }
 
-    switch (documentType) {
+    switch (effectiveDocType) {
       case 'vehicle':
         mockData.vehicleReg = 'TN 09 AB 1234'
         mockData.documentNumber = 'MAT445103K2B12345'
@@ -149,6 +157,7 @@ export function AIScanModal({ children, documentType = 'vehicle', onScanComplete
     })
 
     onScanComplete?.(mockData)
+    onResult?.(mockData)
   }
 
   const handleClose = () => {
@@ -169,9 +178,11 @@ export function AIScanModal({ children, documentType = 'vehicle', onScanComplete
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      {children && (
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

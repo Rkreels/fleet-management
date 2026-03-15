@@ -31,7 +31,7 @@ const GPSPage = () => {
           {/* Vehicle list */}
           <div className="lg:col-span-1 space-y-2">
             <h2 className="font-semibold text-slate-700 text-sm mb-3">Fleet Status</h2>
-            <div className="max-h-[500px] overflow-y-auto space-y-2 custom-scrollbar pr-1" style={{ scrollbarWidth: '6px', scrollbarColor: '#cbd5e1' }}>
+            <div className="max-h-[500px] overflow-y-auto space-y-2 custom-scrollbar pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1' }}>
               {vehicles.slice(0, 10).map((v) => (
               <button
                 key={v.id}

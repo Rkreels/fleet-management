@@ -44,13 +44,13 @@ export function EditVehicleModal({ vehicleId, children, onSuccess }: EditVehicle
 
   // Step 2: Documents
   const [documents, setDocuments] = useState({
-    rc: { file: null as File | null, expiry: '', status: 'ok' as const },
-    fc: { file: null as File | null, expiry: '', status: 'ok' as const },
-    insurance: { file: null as File | null, expiry: '', status: 'ok' as const },
-    permit: { file: null as File | null, expiry: '', status: 'ok' as const },
-    nationalPermit: { file: null as File | null, expiry: '', status: 'ok' as const },
-    roadTax: { file: null as File | null, expiry: '', status: 'ok' as const },
-    puc: { file: null as File | null, expiry: '', status: 'ok' as const },
+    rc: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
+    fc: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
+    insurance: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
+    permit: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
+    nationalPermit: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
+    roadTax: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
+    puc: { file: null as File | null, expiry: '', status: 'ok' as 'ok' | 'expired' | 'due' },
   })
 
   // Load vehicle data when modal opens

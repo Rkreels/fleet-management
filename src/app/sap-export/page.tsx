@@ -116,7 +116,7 @@ export default function SAPExportPage() {
           'Work': m.work,
           'Vendor': m.vendor,
           'Cost (৳)': m.cost,
-          'GST (৳)': m.gst,
+          'VAT (৳)': m.vat,
           'Status': m.status
         }))
     }

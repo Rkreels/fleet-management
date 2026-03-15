@@ -18,8 +18,8 @@ const vehicleModels = [
 const states = ['TN', 'KA', 'MH', 'KL', 'AP', 'TS', 'GJ', 'UP'];
 const cities = ['Chennai', 'Bangalore', 'Mumbai', 'Hyderabad', 'Kochi', 'Coimbatore', 'Madurai', 'Trichy', 'Salem', 'Pune', 'Delhi', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Kolkata'];
 
-const generateVehicles = () => {
-  const vehicles = [];
+const generateVehicles = (): any[] => {
+  const vehicles: any[] = [];
   for (let i = 1; i <= 30; i++) {
     const state = states[Math.floor(Math.random() * states.length)];
     const city = cities[Math.floor(Math.random() * cities.length)];
@@ -67,8 +67,8 @@ const driverNames = [
   'Dinesh M', 'Harish R', 'Kumaravel M'
 ];
 
-const generateDrivers = () => {
-  const drivers = [];
+const generateDrivers = (): any[] => {
+  const drivers: any[] = [];
   for (let i = 1; i <= 30; i++) {
     const year = 2019 + Math.floor(Math.random() * 6);
     drivers.push({
@@ -101,8 +101,8 @@ const generateDrivers = () => {
 // Generate 100 fuel entries
 const fuelVendors = ['HP Petrol Pump', 'BPCL', 'IOC', 'Shell', 'Essar', 'Reliance', 'Bharat Petroleum', 'Hindustan Petroleum'];
 
-const generateFuelEntries = (vehicles, drivers) => {
-  const entries = [];
+const generateFuelEntries = (vehicles: any[], drivers: any[]) => {
+  const entries: any[] = [];
   let id = 1;
   
   for (const vehicle of vehicles) {
@@ -134,8 +134,8 @@ const generateFuelEntries = (vehicles, drivers) => {
 };
 
 // Generate 50 trips
-const generateTrips = (vehicles, drivers) => {
-  const trips = [];
+const generateTrips = (vehicles: any[], drivers: any[]) => {
+  const trips: any[] = [];
   let id = 1;
   
   for (let i = 0; i < 50; i++) {
@@ -195,8 +195,8 @@ const maintenanceVendors = [
   'Chennai Truck Service', 'Coimbatore Motors', 'Madurai Auto Care'
 ];
 
-const generateMaintenance = (vehicles) => {
-  const records = [];
+const generateMaintenance = (vehicles: any[]) => {
+  const records: any[] = [];
   let id = 1;
   
   for (const vehicle of vehicles) {
@@ -227,8 +227,8 @@ const generateMaintenance = (vehicles) => {
 // Generate 30 FASTags (one per vehicle)
 const fastagBanks = ['HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank', 'Kotak Bank', 'Canara Bank', 'Bank of Baroda', 'Punjab National Bank'];
 
-const generateFASTags = (vehicles, drivers) => {
-  const fastags = [];
+const generateFASTags = (vehicles: any[], drivers: any[]) => {
+  const fastags: any[] = [];
   
   for (const vehicle of vehicles) {
     const driver = drivers.find(d => d.id === vehicle.driverId);
@@ -259,8 +259,8 @@ const tyrePositions = ['Front LHS', 'Front RHS', 'Axle LHS Inner', 'Axle LHS Out
 const tyreSizes = ['295/80 R22.5', '10.00 R20', '11.00 R20', '315/80 R22.5', '275/80 R22.5'];
 const tyreBrands = ['MRF', 'Apollo', 'CEAT', 'Bridgestone', 'JK Tyre', 'BKT', 'Continental'];
 
-const generateTyres = (vehicles) => {
-  const tyres = [];
+const generateTyres = (vehicles: any[]) => {
+  const tyres: any[] = [];
   let id = 1;
   
   for (const vehicle of vehicles) {
@@ -306,8 +306,8 @@ const alertMessages = [
   (vehicle, doc) => `Document ${doc} expiring for ${vehicle}`,
 ];
 
-const generateAlerts = (vehicles, drivers) => {
-  const alerts = [];
+const generateAlerts = (vehicles: any[], drivers: any[]) => {
+  const alerts: any[] = [];
   let id = 1;
   
   for (let i = 0; i < 50; i++) {
@@ -353,8 +353,8 @@ const inventoryItems = {
   'Fluids': ['Diesel', 'Brake Fluid', 'Coolant', 'Power Steering Fluid', 'Windshield Washer']
 };
 
-const generateInventory = () => {
-  const items = [];
+const generateInventory = (): any[] => {
+  const items: any[] = [];
   let id = 1;
   
   for (const [category, itemNames] of Object.entries(inventoryItems)) {

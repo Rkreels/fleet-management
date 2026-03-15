@@ -8,7 +8,7 @@ import { LiveMapView } from '@/components/LiveMapView'
 import { DriverAppView } from '@/components/DriverAppView'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/hooks/use-toast'
 import {
   Truck, Users, Fuel, AlertTriangle, Bell, Smartphone,
   Calendar, TrendingUp, DollarSign, MoreHorizontal, CheckCircle,
