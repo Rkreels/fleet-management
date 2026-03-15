@@ -9,9 +9,5 @@
         }
       ]
     }
-  ],
-  "rewrites": [
-    { "source": "/fleet-management/:path(.*)", "destination": "/:path$1" },
-    { "source": "/fleet-management", "destination": "/" }
   ]
 }
