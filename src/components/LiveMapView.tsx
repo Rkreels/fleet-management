@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Navigation, Truck, Clock, Fuel, Route, X, Eye, Map as MapIcon } from 'lucide-react'
 import { useFleetStore } from '@/lib/store'
 import { StatusBadge } from './StatusBadge'
-import { cn } from '@/lib/utils'
+import { useNavigate } from 'react-router-dom'
 
 
 interface VehiclePosition {
@@ -23,7 +23,7 @@ export function LiveMapView() {
   const { vehicles } = useFleetStore()
   const [vehiclePositions, setVehiclePositions] = useState<VehiclePosition[]>([])
   const [selectedVehicle, setSelectedVehicle] = useState<VehiclePosition | null>(null)
-  const router = useRouter()
+  const navigate = useNavigate()
   const [isDragging, setIsDragging] = useState(false)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
@@ -357,7 +357,7 @@ export function LiveMapView() {
               className="mt-4 flex gap-2"
             >
               <button
-                onClick={() => router.push(`/vehicles`)}
+                onClick={() => navigate(`/vehicles`)}
                 className="flex-1 rounded-lg bg-orange-500 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
               >
                 <span className="flex items-center justify-center gap-1">
@@ -366,7 +366,7 @@ export function LiveMapView() {
                 </span>
               </button>
               <button
-                onClick={() => router.push(`/gps`)}
+                onClick={() => navigate(`/gps`)}
                 className="flex-1 rounded-lg border border-border py-2 text-sm font-medium hover:bg-accent transition-colors"
               >
                 <span className="flex items-center justify-center gap-1">
