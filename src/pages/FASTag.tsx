@@ -158,7 +158,7 @@ export default function FASTagPage() {
   }
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -546,6 +546,5 @@ export default function FASTagPage() {
           </Dialog>
         </motion.div>
       </div>
-    </div>
   )
 }

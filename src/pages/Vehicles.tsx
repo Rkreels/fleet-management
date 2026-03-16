@@ -380,8 +380,7 @@ export default function VehiclesPage() {
               </Button>
             </div>
           </motion.div>
-        </motion.div>
-      </motion.div>
+        )}
     </motion.div>
   )
 }

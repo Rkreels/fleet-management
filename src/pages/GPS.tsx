@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Truck, Navigation, Wifi, Activity, X } from 'lucide-react';
+;
 import { LiveMapView } from '@/components/LiveMapView';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useFleetStore } from '@/lib/store';
@@ -12,7 +13,7 @@ const GPSPage = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0] || null);
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">GPS Live Tracking</h1>
@@ -132,7 +133,7 @@ const GPSPage = () => {
           </div>
         </div>
       </div>
-    );
-  };
+  );
+};
 
 export default GPSPage;

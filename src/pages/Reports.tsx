@@ -483,7 +483,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <motion.div
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
@@ -614,7 +614,6 @@ export default function ReportsPage() {
           </motion.div>
         )}
       </motion.div>
-    </motion.div>
   )
 }
 

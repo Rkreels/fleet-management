@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Scan, Download, TrendingUp, Fuel as FuelIcon, Search } from 'lucide-react';
+;
 import { AIScanModal } from '@/components/AIScanModal';
 import { useFleetStore } from '@/lib/store';
 import { toast } from 'sonner';
@@ -97,7 +98,8 @@ const FuelPage = () => {
       : '0';
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Fuel Management</h1>
@@ -265,9 +267,10 @@ const FuelPage = () => {
             </div>
           </div>
         )}
-        <AIScanModal open={scanOpen} onClose={() => setScanOpen(false)} mode="fuel" onResult={handleScanResult} />
       </div>
-    </div>
+
+      <AIScanModal open={scanOpen} onClose={() => setScanOpen(false)} mode="fuel" onResult={handleScanResult} />
+    </>
   );
 };
 

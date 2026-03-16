@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Scan, Download, Route, Search, TrendingUp, TrendingDown } from 'lucide-react';
+;
 import { AIScanModal } from '@/components/AIScanModal';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useFleetStore } from '@/lib/store';
@@ -94,7 +95,8 @@ const TripsPage = () => {
   const netPL = totalFreight - totalExpense;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Trip Management</h1>
@@ -260,9 +262,10 @@ const TripsPage = () => {
             </div>
           </div>
         )}
-        <AIScanModal open={scanOpen} onClose={() => setScanOpen(false)} mode="trip" onResult={() => {}} />
       </div>
-    </div>
+
+      <AIScanModal open={scanOpen} onClose={() => setScanOpen(false)} mode="trip" onResult={() => {}} />
+    </>
   );
 };
 

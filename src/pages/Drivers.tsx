@@ -219,7 +219,7 @@ export default function DriversPage() {
   }
 
   return (
-    <motion.div
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
@@ -524,6 +524,5 @@ export default function DriversPage() {
           />
         )}
       </motion.div>
-    </motion.div>
   )
 }

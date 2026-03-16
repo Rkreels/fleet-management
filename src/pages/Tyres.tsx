@@ -255,7 +255,8 @@ export default function TyresPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -747,6 +748,6 @@ export default function TyresPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </>
   )
 }
