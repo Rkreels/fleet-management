@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { useFleetStore } from '@/lib/store'
 import { toast } from 'sonner'
 import {
@@ -176,8 +175,7 @@ export default function SAPExportPage() {
   }
 
   return (
-    <Layout>
-      <motion.div
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
@@ -420,6 +418,6 @@ export default function SAPExportPage() {
           </TabsContent>
         </Tabs>
       </motion.div>
-    </Layout>
+    </motion.div>
   )
 }

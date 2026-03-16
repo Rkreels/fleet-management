@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { KpiCard } from '@/components/KpiCard'
 import { useFleetStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -256,8 +255,7 @@ export default function TyresPage() {
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -749,6 +747,6 @@ export default function TyresPage() {
           </DialogContent>
         </Dialog>
       )}
-    </Layout>
+    </div>
   )
 }

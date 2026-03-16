@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { toast } from 'sonner'
 import { useFleetStore } from '@/lib/store'
 import {
@@ -102,8 +101,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <Layout>
-      <motion.div
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
@@ -490,8 +488,8 @@ export default function SettingsPage() {
               </div>
             </Card>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </motion.div>
       </motion.div>
-    </Layout>
-  )
-}
+    )
+  }

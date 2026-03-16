@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { KpiCard } from '@/components/KpiCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useFleetStore, Vehicle, Driver } from '@/lib/store'
@@ -159,8 +158,7 @@ export default function FASTagPage() {
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -548,6 +546,6 @@ export default function FASTagPage() {
           </Dialog>
         </motion.div>
       </div>
-    </Layout>
+    </div>
   )
 }

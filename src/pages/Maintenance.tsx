@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { KpiCard } from '@/components/KpiCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { AIScanModal } from '@/components/AIScanModal'
@@ -207,8 +206,7 @@ export default function MaintenancePage() {
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -589,7 +587,6 @@ export default function MaintenancePage() {
             </TableBody>
           </Table>
         </motion.div>
-      </div>
 
       {/* View Record Modal */}
       {viewRecord && (
@@ -645,6 +642,6 @@ export default function MaintenancePage() {
           </DialogContent>
         </Dialog>
       )}
-    </Layout>
+    </div>
   )
 }

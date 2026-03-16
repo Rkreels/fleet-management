@@ -17,7 +17,7 @@ import SettingsPage from './pages/Settings'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/fleet-management">
       <Routes>
         <Route path="/" element={<Navigate to="/fleet-management" replace />} />
         <Route path="/fleet-management" element={<Layout />}>

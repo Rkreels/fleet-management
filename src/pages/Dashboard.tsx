@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { KpiCard } from '@/components/KpiCard'
 import { LiveMapView } from '@/components/LiveMapView'
 import { DriverAppView } from '@/components/DriverAppView'
@@ -108,7 +107,6 @@ export default function Dashboard() {
   }
 
   return (
-    <Layout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -391,6 +389,5 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </motion.div>
-    </Layout>
   )
 }

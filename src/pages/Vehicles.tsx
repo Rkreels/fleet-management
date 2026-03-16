@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { AddVehicleModal } from '@/components/AddVehicleModal'
 import { VehicleDetailModal } from '@/components/VehicleDetailModal'
 import { EditVehicleModal } from '@/components/EditVehicleModal'
@@ -132,8 +131,7 @@ export default function VehiclesPage() {
   }
 
   return (
-    <Layout>
-      <motion.div
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
@@ -382,8 +380,8 @@ export default function VehiclesPage() {
               </Button>
             </div>
           </motion.div>
-        )}
+        </motion.div>
       </motion.div>
-    </Layout>
+    </motion.div>
   )
 }

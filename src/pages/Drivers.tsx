@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Layout from '@/components/Layout'
 import { AddDriverModal } from '@/components/AddDriverModal'
 import { DriverProfileModal } from '@/components/DriverProfileModal'
 import { EditDriverModal } from '@/components/EditDriverModal'
@@ -220,8 +219,7 @@ export default function DriversPage() {
   }
 
   return (
-    <Layout>
-      <motion.div
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
@@ -526,6 +524,6 @@ export default function DriversPage() {
           />
         )}
       </motion.div>
-    </Layout>
+    </motion.div>
   )
 }
