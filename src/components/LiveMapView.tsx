@@ -6,7 +6,7 @@ import { MapPin, Navigation, Truck, Clock, Fuel, Route, X, Eye, Map as MapIcon }
 import { useFleetStore } from '@/lib/store'
 import { StatusBadge } from './StatusBadge'
 import { cn } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
+
 
 interface VehiclePosition {
   id: number

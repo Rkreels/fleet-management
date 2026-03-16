@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   LayoutDashboard, 
@@ -39,7 +39,7 @@ const navigation = [
 ]
 
 export function Sidebar() {
-  const pathname = usePathname()
+  const pathname = useLocation()
 
   return (
     <motion.aside

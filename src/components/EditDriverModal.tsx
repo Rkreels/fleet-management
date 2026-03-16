@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFleetStore, Driver } from '@/lib/store'
-import { toast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { User, Upload, Camera, FileText, Check, X, Save } from 'lucide-react'
 
 interface EditDriverModalProps {

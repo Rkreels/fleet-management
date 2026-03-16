@@ -14,8 +14,7 @@ import {
   LogOut
 } from 'lucide-react'
 import { useFleetStore } from '@/lib/store'
-import { useTheme } from 'next-themes'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -25,9 +24,9 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
-  const router = useRouter()
-  const { alerts, clearAlerts, markAlertRead } = useFleetStore()
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const navigate = useNavigate()
+  const { alerts, markAlertRead } = useFleetStore()
 
   const unreadAlerts = alerts.filter(a => !a.read)
 
@@ -220,7 +219,7 @@ export function Header() {
                         size="sm"
                         onClick={() => {
                           setProfileOpen(false)
-                          router.push('/settings')
+                          navigate('/fleet-management/settings')
                         }}
                       >
                         <SettingsIcon className="h-4 w-4" />
@@ -233,7 +232,7 @@ export function Header() {
                         onClick={() => {
                           toast.success('Signing out...')
                           setTimeout(() => {
-                            router.push('/login')
+                            navigate('/login')
                           }, 1000)
                         }}
                       >

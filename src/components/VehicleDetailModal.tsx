@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFleetStore, type Vehicle } from '@/lib/store'
-import { toast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import {
   Car, FileText, Wrench, MapPin, Calendar, Fuel, Gauge,
   AlertTriangle, CheckCircle, XCircle, Clock, User, Shield, Settings
