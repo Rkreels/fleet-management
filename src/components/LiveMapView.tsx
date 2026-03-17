@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Navigation, Truck, Clock, Fuel, Route, X, Eye, Map as MapIcon } from 'lucide-react'
 import { useFleetStore } from '@/lib/store'
 import { StatusBadge } from './StatusBadge'
+import { cn } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 
 

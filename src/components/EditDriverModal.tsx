@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useFleetStore, Driver } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { User, Upload, Camera, FileText, Check, X, Save } from 'lucide-react'
 
 interface EditDriverModalProps {
@@ -356,7 +356,7 @@ export function EditDriverModal({ driverId, open, onOpenChange, onSuccess }: Edi
                   <SelectValue placeholder="Select vehicle to assign (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Vehicle Assigned</SelectItem>
+                  <SelectItem value="none">No Vehicle Assigned</SelectItem>
                   {vehicles.map(vehicle => (
                     <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
                       {vehicle.regNo} - {vehicle.model}

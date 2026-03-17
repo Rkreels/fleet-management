@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFleetStore, Alert } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   Bell, BellRing, Check, CheckCheck, Trash2, Filter,
   AlertTriangle, Info, AlertCircle, X, MoreVertical

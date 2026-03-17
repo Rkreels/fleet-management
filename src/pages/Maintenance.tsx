@@ -6,7 +6,7 @@ import { KpiCard } from '@/components/KpiCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { AIScanModal } from '@/components/AIScanModal'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { 
   Wrench, Search, Plus, FileText, Download, CheckCircle, 
   Calendar, DollarSign, Truck, MapPin, Filter, SlidersHorizontal,

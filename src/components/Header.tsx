@@ -17,7 +17,7 @@ import { useFleetStore } from '@/lib/store'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
@@ -219,7 +219,7 @@ export function Header() {
                         size="sm"
                         onClick={() => {
                           setProfileOpen(false)
-                          navigate('/fleet-management/settings')
+                          navigate('/settings')
                         }}
                       >
                         <SettingsIcon className="h-4 w-4" />

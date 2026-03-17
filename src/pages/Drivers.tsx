@@ -7,7 +7,7 @@ import { DriverProfileModal } from '@/components/DriverProfileModal'
 import { EditDriverModal } from '@/components/EditDriverModal'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   User, Search, Filter, Plus, Download, Eye, Edit, Phone, Car,
   MapPin, Star, Award, CheckCircle, AlertTriangle, Clock, Shield, TrendingUp, ChevronLeft, ChevronRight

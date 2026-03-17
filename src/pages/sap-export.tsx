@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   FileDown, Calendar, Database, Download, History,
   CheckCircle, Clock, AlertCircle, Truck, Users, Route,

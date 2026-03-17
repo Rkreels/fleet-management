@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { useFleetStore, type Driver } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   User, FileText, TrendingUp, MapPin, Calendar, Phone,
   Star, AlertTriangle, Car, Award, Shield, Clock, CheckCircle, XCircle

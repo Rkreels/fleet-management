@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Scan, Download, Route, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Scan, Download, Route, Search, TrendingUp, TrendingDown, X } from 'lucide-react';
 ;
 import { AIScanModal } from '@/components/AIScanModal';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useFleetStore } from '@/lib/store';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 const TripsPage = () => {
   const { trips, addTrip } = useFleetStore();
@@ -171,9 +171,9 @@ const TripsPage = () => {
           />
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {['Vehicle', 'Driver', 'Route', 'Date', 'Distance', 'Freight', 'Expenses', 'Net P/L', 'Status'].map((h) => (
@@ -220,8 +220,14 @@ const TripsPage = () => {
 
         {addOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-              <h2 className="font-bold text-slate-800 text-lg mb-4">Add Trip</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md sm:max-w-lg p-4 sm:p-6 max-h-[90vh] overflow-y-auto relative">
+              <button
+                onClick={() => setAddOpen(false)}
+                className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X size={20} />
+              </button>
+              <h2 className="font-bold text-slate-800 dark:text-white text-lg mb-4">Add Trip</h2>
               <div className="space-y-3">
                 {[
                   { key: 'vehicle', label: 'Vehicle Reg No', placeholder: 'TN 09 AB 1234' },
@@ -235,26 +241,26 @@ const TripsPage = () => {
                   { key: 'otherCost', label: 'Other Expenses (৳)', placeholder: '800' },
                 ].map((f) => (
                   <div key={f.key}>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">{f.label}</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">{f.label}</label>
                     <input
                       value={form[f.key as keyof typeof form]}
                       onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                       placeholder={f.placeholder}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                      className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
                     />
                   </div>
                 ))}
               </div>
-              <div className="flex gap-3 mt-5">
+              <div class="flex flex-col sm:flex-row gap-3 mt-5">
                 <button
                   onClick={() => setAddOpen(false)}
-                  className="flex-1 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all text-sm font-medium"
+                  class="flex-1 py-2.5 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 transition-all text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAdd}
-                  className="flex-1 py-2.5 bg-[#f97316] text-white rounded-lg hover:bg-[#ea6c0a] transition-all text-sm font-medium"
+                  class="flex-1 py-2.5 bg-[#f97316] text-white rounded-lg hover:bg-[#ea6c0a] transition-all text-sm font-medium"
                 >
                   Add Trip
                 </button>

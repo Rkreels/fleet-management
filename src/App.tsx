@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import VehiclesPage from './pages/Vehicles'
@@ -19,8 +19,7 @@ function App() {
   return (
     <BrowserRouter basename="/fleet-management">
       <Routes>
-        <Route path="/" element={<Navigate to="/fleet-management" replace />} />
-        <Route path="/fleet-management" element={<Layout />}>
+        <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="drivers" element={<DriversPage />} />

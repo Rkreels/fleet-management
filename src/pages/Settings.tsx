@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { useFleetStore } from '@/lib/store'
 import {
   Building2, User, Bell, Moon, Sun, Save, Shield,

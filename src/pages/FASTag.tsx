@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { KpiCard } from '@/components/KpiCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useFleetStore, Vehicle, Driver } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   CreditCard, Search, Plus, Download, AlertTriangle, RefreshCw,
   ArrowUpDown, TrendingUp, Clock, Wallet, MoreHorizontal, Eye, Banknote,

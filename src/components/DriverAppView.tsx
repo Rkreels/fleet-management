@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   Smartphone, Fuel, Gauge, MapPin, User, LogOut,
   ArrowRight, CheckCircle, Clock, TrendingUp, FileText,

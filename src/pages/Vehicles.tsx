@@ -7,7 +7,7 @@ import { VehicleDetailModal } from '@/components/VehicleDetailModal'
 import { EditVehicleModal } from '@/components/EditVehicleModal'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import {
   Truck, Search, Filter, Plus, Download, Eye, Edit, MapPin,
   Fuel, Gauge, CheckCircle, AlertTriangle, Clock, MoreVertical, FileText

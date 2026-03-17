@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { KpiCard } from '@/components/KpiCard'
 import { useFleetStore } from '@/lib/store'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { 
   Circle, Search, Plus, Download, AlertTriangle, Gauge,
   ArrowUpDown, MoreHorizontal, Eye, TrendingUp, Truck, Calendar, Trash2
@@ -642,12 +642,12 @@ export default function TyresPage() {
       {/* View Tyre Modal */}
       {viewTyre && (
         <Dialog open={!!viewTyre} onOpenChange={() => setViewTyre(null)}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Tyre Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Vehicle</Label>
                   <p className="font-medium">{viewTyre.vehicle}</p>

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Plus, Search, Package, Download, AlertTriangle, Edit2, Trash2, X } from 'lucide-react';
 ;
 import { useFleetStore } from '@/lib/store';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -183,16 +183,16 @@ const InventoryPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search inventory..."
-              className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+              className="w-full pl-9 pr-4 py-2.5 border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(['all', 'low', 'critical'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                  filter === f ? 'bg-[#f97316] text-white' : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
+                className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+                  filter === f ? 'bg-[#f97316] text-white' : 'bg-white dark:bg-gray-700 dark:text-gray-200 border border-slate-300 dark:border-gray-600 text-slate-600 hover:bg-slate-50 dark:hover:bg-gray-600'
                 }`}
               >
                 {f}
@@ -201,9 +201,9 @@ const InventoryPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {['Item Name', 'Category', 'Quantity', 'Unit', 'Min Stock', 'Location', 'Status', 'Last Updated', 'Actions'].map((h) => (
